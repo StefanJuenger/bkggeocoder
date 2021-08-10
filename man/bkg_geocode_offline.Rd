@@ -61,7 +61,7 @@ the \code{place_match_quality} parameter. In a second step, the input
 addresses together with the matched results are then again matched against
 the addresses in the address/geocoordinate database (second round of record
 linkage). Again, you can play with the quality by adjusting
-the \code{target_quality} parameter. The overall quality of the quality of
+the \code{target_quality} parameter. The overall quality of
 the geocoding can be evaluated by looking at the values of the column
 \code{score} (ranging from 0 to 1), which is based on the second round of
 record linkage.¸
