@@ -17,3 +17,8 @@ remotes::install_github("StefanJuenger/bkggeocoder")
 WARNING: The routines for geocoding and also the way the data are provided are still in the process of testing. Please be aware that some things may change in the future.
 
 Enjoy!
+
+## A few points about the data...
+My employer (GESIS - Leibniz Institute for the Social Sciences) is a licensee of the BKG services, which is why I can work with their data. But I am not allowed to share the data, and thus I have implemented the workflow with the decrypted data that must be used offline. Still, I wanted to make sure that the workflows of geocoding at GESIS are as transparent as possible. Publishing the code on GitHub seemed to be a proper choice for that. In any case, please always refer to the source of data as follows:
+
+© GeoBasis-DE / BKG, Deutsche Post Direkt GmbH, Statistisches Bundesamt, Wiesbaden (2021)
