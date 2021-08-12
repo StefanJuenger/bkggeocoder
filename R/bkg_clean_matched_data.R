@@ -1,6 +1,8 @@
 bkg_clean_matched_addresses <-
   function(
     fuzzy_joined_data,
+    zip_code,
+    place,
     id_variable
   ) {
 
@@ -14,17 +16,17 @@ bkg_clean_matched_addresses <-
         ~stringr::str_replace(., ".y", "_output"))
 
     # set missing coordinates to zero to be compliant with sf
-    fuzzy_joined_data$x_4647[is.na(fuzzy_joined_data$x)] <- 0
-    fuzzy_joined_data$y_4647[is.na(fuzzy_joined_data$y)] <- 0
+    fuzzy_joined_data$x[is.na(fuzzy_joined_data$x)] <- 0
+    fuzzy_joined_data$y[is.na(fuzzy_joined_data$y)] <- 0
 
     # clean dataset
     fuzzy_joined_data <-
       fuzzy_joined_data %>%
       dplyr::mutate(
         address_input =
-          paste(whole_address_input, zip_code_input, place_input),
+          paste(whole_address_input, {{zip_code}}, {{place}}),
         address_output =
-          paste(whole_address_output, zip_code_output, place_output)
+          paste(whole_address_add)#, zip_code_output, place_output)
       ) %>%
       dplyr::mutate(
         GEM = RS %>% stringr::str_sub(1, 9),
@@ -40,10 +42,11 @@ bkg_clean_matched_addresses <-
       ) %>%
       tibble::as_tibble() %>%
       dplyr::select(
-        !!id_variable, score,
+        {{id_variable}},
+        score,
         address_input,
         address_output,
-        score, RS, GEM, KRS, RBZ, STA, dplyr::contains("Gitter"), geometry
+        RS, GEM, KRS, RBZ, STA, dplyr::contains("Gitter"), geometry
       ) %>%
       dplyr::mutate(
         source =

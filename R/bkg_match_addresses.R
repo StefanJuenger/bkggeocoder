@@ -1,17 +1,22 @@
 bkg_match_addresses <-
   function(
     data_edited,
+    street,
+    house_number,
+    zip_code,
+    place,
     house_coordinates,
-    target_quality
+    target_quality,
+    echo
   ) {
 
     data_edited$matched$whole_address <-
       paste0(
-        data_edited$matched$street  %>%
+        data_edited$matched[[street]]  %>%
           gsub("Str[.]", "Straße", .) %>%
           gsub("str[.]", "straße", .),
-        if ("house_number" %in% colnames(data_edited$matched)) {
-          paste0(" ", data_edited$matched$house_number)
+        if (house_number %in% colnames(data_edited$matched)) {
+          paste0(" ", data_edited$matched[[house_number]])
         } else {
           ""
         }
@@ -29,18 +34,21 @@ bkg_match_addresses <-
       vector(mode = "list", length = nrow(data_edited$matched))
 
     # initialize progress bar
-    pb <-
-      progress::progress_bar$new(
-        total = nrow(data_edited$matched),
-        force = TRUE,
-        clear = FALSE
-      )
-
-    pb$tick(0)
+    if (isTRUE(echo)) {
+      pb <-
+        progress::progress_bar$new(
+          total = nrow(data_edited$matched),
+          force = TRUE,
+          clear = FALSE
+        )
+      pb$tick(0)
+    }
 
     for (i in 1:nrow(data_edited$matched)) {
 
-      pb$tick()
+      if (isTRUE(echo)) {
+        pb$tick()
+      }
 
       fuzzy_joined_data[[i]] <-
         reclin::pair_blocking(

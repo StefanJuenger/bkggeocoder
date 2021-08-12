@@ -4,22 +4,26 @@
 #'
 #' @noRd
 
-bkg_query_ga <- function(places, data_path, credentials_path) {
+bkg_query_ga <- function(places, data_path, credentials_path, echo) {
 
   # initialize progress bar
-  pb_query <-
-    progress::progress_bar$new(
-      total = length(places),
-      force = TRUE,
-      clear = FALSE
-    )
+  if (isTRUE(echo)) {
+    pb_query <-
+      progress::progress_bar$new(
+        total = length(places),
+        force = TRUE,
+        clear = FALSE
+      )
 
-  pb_query$tick(0)
+    pb_query$tick(0)
+  }
 
   queried_ga <-
     lapply(places, function(i) {
 
-      pb_query$tick()
+      if (isTRUE(echo)) {
+        pb_query$tick()
+      }
 
       dataset_name <-
         i %>%

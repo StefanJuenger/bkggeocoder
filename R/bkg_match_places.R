@@ -9,23 +9,30 @@ bkg_match_places <-
   function (
     data,
     id_variable,
+    place,
+    zip_code,
     data_path,
     credentials_path,
-    place_match_quality
+    place_match_quality,
+    echo
   ) {
 
-    message("Starting retrieving place names as in database...")
+    if (isTRUE(echo)) {
+      message("Starting retrieving place names as in database...")
+    }
 
     data_municipalities <-
       data %>%
-      dplyr::select(place, zip_code) %>%
+      dplyr::select(place := !!place, zip_code := !!zip_code) %>%
       dplyr::distinct() %>%
       dplyr::mutate(
         az_group = stringr::str_sub(place, 1, 3),
         plz_group = stringr::str_sub(zip_code, 1, 3)
       )
 
-    message(paste0("Found ", nrow(data_municipalities), " distinct places."))
+    if (isTRUE(echo)) {
+      message(paste0("Found ", nrow(data_municipalities), " distinct places."))
+    }
 
     .crypt <-
       paste0(data_path, "/zip_places/ga_zip_places.csv.encryptr.bin") %>%
@@ -79,8 +86,8 @@ bkg_match_places <-
         reclin::link(all_x = TRUE, all_y = FALSE) %>%
         tibble::as_tibble() %>%
         dplyr::select(
-          place = place.x,
-          zip_code = zip_code.x,
+          !!place := place.x,
+          !!zip_code := zip_code.x,
           place_matched = place.y,
           zip_code_matched = zip_code.y
         )
@@ -90,20 +97,22 @@ bkg_match_places <-
       data_municipalities_real %>%
       dplyr::filter(is.na(place_matched))
 
-    message(
-      paste0(
-        "\nWARNING: ",
-        nrow(unmatched_places),
-        " place(s) left unmatched."
+    if (isTRUE(echo)) {
+      message(
+        paste0(
+          "\nWARNING: ",
+          nrow(unmatched_places),
+          " place(s) left unmatched."
+        )
       )
-    )
+    }
 
     # add to dataset
     data_matched <-
       dplyr::left_join(
         data,
         data_municipalities_real,
-        by = c("place", "zip_code")
+        by = c(place, zip_code)
       ) %>%
       dplyr::filter(!is.na(place_matched)) %>%
       dplyr::distinct()
@@ -115,15 +124,17 @@ bkg_match_places <-
         by = id_variable
       )
 
-    message(
-      paste0(
-        "WARNING: ",
-        nrow(data_unmatched),
-        " address(es) cannot be geocoded.\n\n",
-        nrow(data_matched),
-        " addresses can be geocoded."
+    if (isTRUE(echo)) {
+      message(
+        paste0(
+          "WARNING: ",
+          nrow(data_unmatched),
+          " address(es) cannot be geocoded.\n\n",
+          nrow(data_matched),
+          " addresses can be geocoded."
+        )
       )
-    )
+    }
 
     list(
       matched = data_matched,
