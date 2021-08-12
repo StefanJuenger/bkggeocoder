@@ -48,57 +48,78 @@ bkg_geocode_offline <- function(
   place = "place",
   data_path = "../bkgdata/",
   credentials_path = "../bkgcredentials/",
-  join_with_original = FALSE,
+  join_with_original = TRUE,
   epsg = NULL,
   place_match_quality = .5,
-  target_quality = .5
+  target_quality = .5,
+  echo = TRUE
 ) {
 
-  message(
-    paste0(
-      "** Starting offline geocoding service **\n",
-      "\n",
-      "Number of distinct addresses: ", nrow(data), "\n",
-      "Targeted quality of geocoding: ", target_quality, " %",
-      "\n"
+  if (isTRUE(echo)) {
+    message(
+      paste0(
+        "** Starting offline geocoding **\n",
+        "\n",
+        "Number of distinct addresses: ", nrow(data), "\n",
+        "Targeted quality of geocoding: ", target_quality, " %",
+        "\n"
+      )
     )
-  )
+  }
 
   # Place Matching ----
   data_edited <-
     bkg_match_places(
       data,
       id_variable,
+      place,
+      zip_code,
       data_path,
       credentials_path,
-      place_match_quality
+      place_match_quality,
+      echo
     )
 
   # Quering Database ----
-  message("\nPreparing database:")
+  if (isTRUE(echo)) {
+    message("\nPreparing database:")
+  }
 
   house_coordinates <-
     bkg_query_ga(
       data_edited$matched$place_matched %>% unique(),
       data_path,
-      credentials_path
+      credentials_path,
+      echo
     )
 
   data.table::setkey(house_coordinates, place)
 
   # Retrieving Geocoordinates ----
-  message("\nStarting geocoding:")
+  if (isTRUE(echo)) {
+    message("\nStarting geocoding:")
+  }
 
   fuzzy_joined_data <-
     bkg_match_addresses(
       data_edited,
+      street,
+      house_number,
+      zip_code,
+      place,
       house_coordinates,
-      target_quality
+      target_quality,
+      echo
     )
 
   # Data Cleaning ----
   fuzzy_joined_data <-
-    bkg_clean_matched_addresses(fuzzy_joined_data, id_variable)
+    bkg_clean_matched_addresses(
+      fuzzy_joined_data,
+      zip_code,
+      place,
+      id_variable
+      )
 
   if (isTRUE(join_with_original)) {
     fuzzy_joined_data <-
@@ -107,27 +128,13 @@ bkg_geocode_offline <- function(
 
   if (!is.null(epsg)) {
     fuzzy_joined_data <- sf::st_transform(fuzzy_joined_data, crs = epsg)
+  } else {
+    epsg <- "3035"
   }
 
   # prepare data
   geocoded_data    <- fuzzy_joined_data %>% filter(!is.na(RS))
   geocoded_data_na <- fuzzy_joined_data %>% filter(is.na(RS))
-
-  output_message <-
-    paste0(
-      "\n",
-      "*** SUMMARY *** \n\n",
-      "Addresses in input data:         ", nrow(data), "\n",
-      "Addresses entering geocoding:    ", nrow(data_edited$matched), "\n",
-      "Addresses left out:              ", nrow(data_edited$unmatched), "\n",
-      "Addressses geocoded:             ", nrow(geocoded_data), "\n",
-      "Addressees geocoded with errors: ", nrow(geocoded_data_na), "\n",
-      "Mean score:                      ", mean(geocoded_data$score, na.rm = TRUE), "\n",
-      "Standard deviation of score:     ", sd(geocoded_data$score, na.rm = TRUE), "\n",
-      "Minimum score:                   ", min(geocoded_data$score, na.rm = TRUE)
-    )
-
-  message(output_message)
 
   # create list
   output_list <-
@@ -135,8 +142,34 @@ bkg_geocode_offline <- function(
       geocoded_data = geocoded_data,
       geocoded_data_na = geocoded_data_na,
       non_geocoded_data = data_edited$data_unmatched,
-      unmatched_places = data_edited$unmatched_places
+      unmatched_places = data_edited$unmatched_places,
+      summary_statistics =
+        tibble::tibble(
+          n_input = nrow(data),
+          n_entering = nrow(data_edited$matched),
+          n_geocoded = nrow(geocoded_data),
+          n_geocoded_error = nrow(geocoded_data_na),
+          mean_score = mean(geocoded_data$score, na.rm = TRUE),
+          sd_score = sd(geocoded_data$score, na.rm = TRUE),
+          min_score = min(geocoded_data$score, na.rm = TRUE)
+        ),
+      set_parameters =
+        tibble::tibble(
+          place_match_quality = place_match_quality,
+          target_quality = target_quality,
+          target_epsg = epsg,
+          id_name = id_variable,
+          street_name = street,
+          house_number_name = house_number,
+          zip_code_name = zip_code,
+          place_name = place,
+          data_name = deparse(substitute(data)),
+          join_with_original = join_with_original
+        )
     )
+
+  class(output_list) <- append(class(output_list), "GeocodingResults")
 
   output_list
 }
+
