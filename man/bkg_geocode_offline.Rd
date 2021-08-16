@@ -13,10 +13,11 @@ bkg_geocode_offline(
   place = "place",
   data_path = "../bkgdata/",
   credentials_path = "../bkgcredentials/",
-  join_with_original = FALSE,
+  join_with_original = TRUE,
   epsg = NULL,
   place_match_quality = 0.5,
-  target_quality = 0.5
+  target_quality = 0.5,
+  echo = TRUE
 )
 }
 \arguments{
