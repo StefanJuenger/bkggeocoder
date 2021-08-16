@@ -1,12 +1,13 @@
 Package: bkggeocoder
 Type: Package
-Title: What the Package Does (Title Case)
+Title: R Package for geocoding based on the data of the Federal Agency of 
+    Cartography and Geodesy (BKG) in Germany
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Authors@R: 
+    person("Stefan", "Jünger", email = "stefan.juenger@gesis.org", role = "cre")
+Description: R Package for geocoding based on the data of the Federal Agency of 
+    Cartography and Geodesy (BKG) in Germany
+License: CC-BY
 Encoding: UTF-8
 LazyData: true
 Imports: 
