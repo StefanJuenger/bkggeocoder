@@ -20,5 +20,6 @@ Imports:
     stringr,
     tibble
 Depends:
-    data.table
+    data.table,
+    dplyr
 RoxygenNote: 7.1.1
