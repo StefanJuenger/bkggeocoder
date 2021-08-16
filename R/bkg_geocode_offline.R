@@ -127,14 +127,20 @@ bkg_geocode_offline <- function(
   }
 
   if (!is.null(epsg)) {
-    fuzzy_joined_data <- sf::st_transform(fuzzy_joined_data, crs = epsg)
+    fuzzy_joined_data <-
+      fuzzy_joined_data %>%
+      sf::st_as_sf() %>%
+      sf::st_transform(fuzzy_joined_data, crs = epsg)
   } else {
-    epsg <- "3035"
+    epsg <- 3035
+
+    fuzzy_joined_data %>%
+      sf::st_as_sf(crs = epsg)
   }
 
   # prepare data
-  geocoded_data    <- fuzzy_joined_data %>% filter(!is.na(RS))
-  geocoded_data_na <- fuzzy_joined_data %>% filter(is.na(RS))
+  geocoded_data    <- fuzzy_joined_data %>% dplyr::filter(!is.na(RS))
+  geocoded_data_na <- fuzzy_joined_data %>% dplyr::filter(is.na(RS))
 
   # create list
   output_list <-
@@ -168,7 +174,7 @@ bkg_geocode_offline <- function(
         )
     )
 
-  class(output_list) <- append(class(output_list), "GeocodingResults")
+  class(output_list) <- c("GeocodingResults", class(output_list))
 
   output_list
 }
