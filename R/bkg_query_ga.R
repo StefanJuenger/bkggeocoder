@@ -30,7 +30,7 @@ bkg_query_ga <- function(places, data_path, credentials_path, echo) {
         gsub("/", "_", .)
 
       .crypt <-
-        paste0(data_path, "/ga/", i, ".csv.encryptr.bin") %>%
+        paste0(data_path, "/ga/", dataset_name, ".csv.encryptr.bin") %>%
         readRDS()
 
       tmp_out_file <- file("tmp_out_file.csv", "wb") # out file
