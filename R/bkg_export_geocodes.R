@@ -39,8 +39,10 @@ bkg_export_geocodes <-
     data_to_export <-
       if (which == "all") {
         dplyr::bind_rows(
-          data$geocoded_data,
-          data$geocoded_data_na
+          data$geocoded_data %>%
+            dplyr::select(-geometry),
+          data$geocoded_data_na %>%
+            dplyr::select(-geometry)
         ) %>%
           dplyr::select(-geometry)
       } else if (which == "successful") {
