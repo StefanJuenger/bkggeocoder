@@ -24,7 +24,7 @@ bkg_clean_matched_addresses <-
       fuzzy_joined_data %>%
       dplyr::mutate(
         address_input =
-          paste(whole_address_input, {{zip_code}}, {{place}}),
+          paste(whole_address_input, zip_code_input, place_input),
         address_output =
           paste(whole_address_add)#, zip_code_output, place_output)
       ) %>%
