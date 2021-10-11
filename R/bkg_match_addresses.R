@@ -53,7 +53,12 @@ bkg_match_addresses <-
       fuzzy_joined_data[[i]] <-
         reclin::pair_blocking(
           data_edited$matched[i,],
-          house_coordinates[.(data_edited$matched[i,]$place_matched)],
+          house_coordinates[
+            # .(
+              place == data_edited$matched[i,]$place_matched &
+              zip_code == data_edited$matched[i,]$zip_code
+              # )
+            ],
           large = FALSE
         ) %>%
         reclin::compare_pairs(

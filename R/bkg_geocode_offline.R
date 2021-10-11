@@ -93,7 +93,7 @@ bkg_geocode_offline <- function(
       echo
     )
 
-  data.table::setkey(house_coordinates, place)
+  data.table::setkeyv(house_coordinates, c("zip_code", "place"))
 
   # Retrieving Geocoordinates ----
   if (isTRUE(echo)) {
