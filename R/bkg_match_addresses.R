@@ -56,7 +56,7 @@ bkg_match_addresses <-
           house_coordinates[
             # .(
               place == data_edited$matched[i,]$place_matched &
-              zip_code == data_edited$matched[i,]$zip_code
+              zip_code == data_edited$matched[i,]$zip_code_matched
               # )
             ],
           large = FALSE
@@ -73,6 +73,27 @@ bkg_match_addresses <-
         dplyr::bind_cols(score = weight_i)
     }
 
-    fuzzy_joined_data %>%
+    fuzzy_joined_data <-
+      fuzzy_joined_data %>%
       do.call(rbind, .)
+
+    # fix scores
+    fuzzy_joined_data <-
+      fuzzy_joined_data %>%
+      dplyr::mutate(
+        score = ifelse(
+          stringr::str_extract(
+            whole_address.x,
+            "[0-9]+[a-z]*"
+          ) ==
+            stringr::str_extract(
+              whole_address.y,
+              "[0-9]+[a-z]*"
+            ),
+          score,
+          score - .05
+        )
+      )
+
+    fuzzy_joined_data
   }
