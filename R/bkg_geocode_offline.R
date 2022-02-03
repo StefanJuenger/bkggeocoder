@@ -9,6 +9,9 @@
 #' @param house_number Character string for the house number
 #' @param zip_code Character string for the zip code
 #' @param place Character string for the place (i.e., municipality/city)
+#' @param data_from_server logical; shall the address data be downloaded from
+#' GESIS internal server? Requires access to the GESIS net (default is FALSE)
+#' @param data_path path to the address data provided by Stefan Jünger
 #' @param credentials_path path to credentials package provided by Stefan Jünger
 #' @param join_with_original logical; join with original data or only output
 #' results
