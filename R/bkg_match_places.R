@@ -27,7 +27,7 @@ bkg_match_places <-
       dplyr::distinct() %>%
       dplyr::mutate(
         az_group = stringr::str_sub(place, 1, 3),
-        plz_group = stringr::str_sub(zip_code, 1, 3)
+        plz_group = stringr::str_sub(zip_code, 1, 6)
       )
 
     if (isTRUE(echo)) {
@@ -64,7 +64,7 @@ bkg_match_places <-
       bkg_zip_places %>%
       dplyr::mutate(
         az_group = stringr::str_sub(place, 1, 3),
-        plz_group = stringr::str_sub(zip_code, 1, 3)
+        plz_group = stringr::str_sub(zip_code, 1, 6)
       )
 
     # match data (record linking)
