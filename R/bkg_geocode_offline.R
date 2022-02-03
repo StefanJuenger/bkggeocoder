@@ -46,6 +46,7 @@ bkg_geocode_offline <- function(
   house_number = "house_number",
   zip_code = "zip_code",
   place = "place",
+  data_from_server = FALSE,
   data_path = "../bkgdata/",
   credentials_path = "../bkgcredentials/",
   join_with_original = TRUE,

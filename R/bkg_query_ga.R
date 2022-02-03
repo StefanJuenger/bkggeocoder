@@ -4,7 +4,8 @@
 #'
 #' @noRd
 
-bkg_query_ga <- function(places, data_path, credentials_path, echo) {
+bkg_query_ga <-
+  function(places, data_from_server, data_path, credentials_path, echo) {
 
   # initialize progress bar
   if (isTRUE(echo)) {
@@ -29,9 +30,19 @@ bkg_query_ga <- function(places, data_path, credentials_path, echo) {
         i %>%
         gsub("/", "_", .)
 
-      .crypt <-
-        paste0(data_path, "/ga/", dataset_name, ".csv.encryptr.bin") %>%
-        readRDS()
+      if(isTRUE(data_from_server)) {
+        .crypt <-
+          paste0(
+            "http://10.6.13.132:8000/ga/",
+            dataset_name,
+            ".csv.encryptr.bin") %>%
+          url() %>%
+          readRDS()
+      } else {
+        .crypt <-
+          paste0(data_path, "/ga/", dataset_name, ".csv.encryptr.bin") %>%
+          readRDS()
+      }
 
       tmp_out_file <- file("tmp_out_file.csv", "wb") # out file
 
