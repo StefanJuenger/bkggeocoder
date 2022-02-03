@@ -11,6 +11,7 @@ bkg_geocode_offline(
   house_number = "house_number",
   zip_code = "zip_code",
   place = "place",
+  data_from_server = FALSE,
   data_path = "../bkgdata/",
   credentials_path = "../bkgcredentials/",
   join_with_original = TRUE,
@@ -31,6 +32,11 @@ next}
 \item{zip_code}{Character string for the zip code}
 
 \item{place}{Character string for the place (i.e., municipality/city)}
+
+\item{data_from_server}{logical; shall the address data be downloaded from
+GESIS internal server? Requires access to the GESIS net (default is FALSE)}
+
+\item{data_path}{path to the address data provided by Stefan Jünger}
 
 \item{credentials_path}{path to credentials package provided by Stefan Jünger}
 
