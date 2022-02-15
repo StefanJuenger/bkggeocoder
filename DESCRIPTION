@@ -15,9 +15,9 @@ Imports:
     magrittr,
     openssl,
     openxlsx,
-    progress,
+    cli,
     readr,
-    reclin,
+    reclin2,
     sf,
     stringr,
     tibble

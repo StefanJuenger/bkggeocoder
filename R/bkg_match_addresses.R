@@ -1,14 +1,15 @@
 bkg_match_addresses <-
   function(
     data_edited,
-    street,
-    house_number,
-    zip_code,
-    place,
+    cols,
     house_coordinates,
     target_quality,
-    echo
+    verbose
   ) {
+    street <- cols[1]
+    house_number <- cols[2]
+    zip_code <- cols[3]
+    place <- cols[4]
 
     data_edited$matched$whole_address <-
       paste0(
@@ -34,7 +35,7 @@ bkg_match_addresses <-
       vector(mode = "list", length = nrow(data_edited$matched))
 
     # initialize progress bar
-    if (isTRUE(echo)) {
+    if (isTRUE(verbose)) {
       pb <-
         progress::progress_bar$new(
           total = nrow(data_edited$matched),
@@ -46,36 +47,40 @@ bkg_match_addresses <-
 
     for (i in 1:nrow(data_edited$matched)) {
 
-      if (isTRUE(echo)) {
+      if (isTRUE(verbose)) {
         pb$tick()
       }
-
-      fuzzy_joined_data[[i]] <-
-        reclin::pair_blocking(
-          data_edited$matched[i,],
-          house_coordinates[
-            # .(
-              place == data_edited$matched[i,]$place_matched &
-              zip_code == data_edited$matched[i,]$zip_code_matched
-              # )
-            ],
-          large = FALSE
-        ) %>%
-        reclin::compare_pairs(
-          by = "whole_address",
-          default_comparator = reclin::jaro_winkler(target_quality),
-          overwrite = TRUE
-        ) %>%
-        reclin::score_simsum() %T>%
-        {weight_i <<- max(.$simsum)} %>%
-        reclin::select_greedy(threshold = target_quality) %>%
-        reclin::link(all_x = TRUE, all_y = FALSE) %>%
+        
+      data_edited_pairs <- reclin2::pair(
+        x = data_edited$matched[i, ],
+        y = house_coordinates[
+          place == data_edited$matched[i,]$place_matched &
+          zip_code == data_edited$matched[i,]$zip_code_matched
+        ]
+      )
+      
+      data_edited_pairs <- reclin2::compare_pairs(
+        data_edited_pairs,
+        on = "whole_address",
+        default_comparator = reclin::jaro_winkler(target_quality),
+        inplace = TRUE
+      )
+      
+      weight_i <- max(data_edited_pairs$whole_address)
+      
+      selection <- reclin2::select_greedy(
+        data_edited_pairs,
+        variable = "threshold",
+        score = "whole_address",
+        threshold = target_quality
+      )
+      selection <- selection[selection$threshold]
+      
+      fuzzy_joined_data[[i]] <- reclin2::link(selection, all_x = TRUE, all_y = FALSE) %>%
         dplyr::bind_cols(score = weight_i)
     }
 
-    fuzzy_joined_data <-
-      fuzzy_joined_data %>%
-      do.call(rbind, .)
+    fuzzy_joined_data <- do.call(rbind, fuzzy_joined_data)
 
     # fix scores
     fuzzy_joined_data <-
@@ -94,6 +99,20 @@ bkg_match_addresses <-
           score - .05
         )
       )
-
+    
+    if (isTRUE(verbose)) {
+      if (!nrow(fuzzy_joined_data)) {
+        stop("No address could be geocoded. Check your input!")
+      } else if (nrow(fuzzy_joined_data) == nrow(data_edited$matched)) {
+        message("SUCCESS: All place-matched addresses could be geocoded.")
+      } else {
+        message(sprintf(
+          "WARNING: %s out of %s place-matched address(es) could be geocoded.",
+          nrow(fuzzy_joined_data),
+          nrow(data_edited$matched)
+        ))
+      }
+    }
+    
     fuzzy_joined_data
   }

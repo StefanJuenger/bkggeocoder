@@ -43,7 +43,7 @@ bkg_geocode_single_address(
   street       = "Unter Sachsenhausen",
   house_number = "6-8",
   zip_code     = 50667,
-  place        = "Köln",
+  place        = "KÃ¶ln",
   epsg         = "3035"
 )
 
@@ -52,7 +52,7 @@ address_data <-
   tibble::tribble(
     ~street, ~house_number, ~zip_code, ~place,
     "B2", "1", "68159", "Mannheim",
-    "Unter Sachsenhausen", "6-8", "50667", "Köln"
+    "Unter Sachsenhausen", "6-8", "50667", "KÃ¶ln"
   )
 
 address_data_geocoded <-

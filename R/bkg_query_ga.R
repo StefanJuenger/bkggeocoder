@@ -5,10 +5,10 @@
 #' @noRd
 
 bkg_query_ga <-
-  function(places, data_from_server, data_path, credentials_path, echo) {
+  function(places, data_from_server, data_path, credentials_path, verbose) {
 
   # initialize progress bar
-  if (isTRUE(echo)) {
+  if (isTRUE(verbose)) {
     pb_query <-
       progress::progress_bar$new(
         total = length(places),
@@ -22,7 +22,7 @@ bkg_query_ga <-
   queried_ga <-
     lapply(places, function(i) {
 
-      if (isTRUE(echo)) {
+      if (isTRUE(verbose)) {
         pb_query$tick()
       }
 
@@ -36,6 +36,7 @@ bkg_query_ga <-
             "http://10.6.13.132:8000/ga/",
             dataset_name,
             ".csv.encryptr.bin") %>%
+          utils::URLencode() %>%
           url() %>%
           readRDS()
       } else {
@@ -76,6 +77,14 @@ bkg_query_ga <-
   queried_ga[, x := gsub(",", ".", x)]
 
   queried_ga[, y := gsub(",", ".", y)]
-
+  
+  if (isTRUE(verbose)) {
+    message(sprintf(
+      "SUCCESS: Read in %s addresses within %s municipalities",
+      nrow(queried_ga),
+      length(unique(queried_ga$place))
+    ))
+  }
+  
   queried_ga
 }

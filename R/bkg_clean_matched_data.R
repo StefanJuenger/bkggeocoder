@@ -1,11 +1,16 @@
 bkg_clean_matched_addresses <-
   function(
     fuzzy_joined_data,
-    zip_code,
-    place,
-    id_variable
+    cols,
+    verbose
   ) {
-
+    zip_code <- cols[3]
+    place <- cols[4]
+    
+    if (isTRUE(verbose)) {
+      message("Cleaning up geocoding output...")
+    }
+    
     fuzzy_joined_data <-
       fuzzy_joined_data %>%
       dplyr::rename_at(
@@ -42,7 +47,7 @@ bkg_clean_matched_addresses <-
       ) %>%
       tibble::as_tibble() %>%
       dplyr::select(
-        {{id_variable}},
+        id,
         score,
         address_input,
         address_output,

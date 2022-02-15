@@ -33,7 +33,7 @@ bkg_geocode_single_address(
   street       = "Unter Sachsenhausen",
   house_number = "6-8",
   zip_code     = 50667,
-  place        = "Köln",
+  place        = "KÃ¶ln",
   epsg         = "3035"
 )
 }

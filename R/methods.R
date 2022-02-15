@@ -9,17 +9,21 @@
 #' @export
 
 print.GeocodingResults <-
-  function(x, which = c("successful", "na", "unmatched_places")) {
-
+  function(x, which = c("successful", "na", "unmatched_places"), ...) {
+    
+    sum <- x$summary_statistics
+    cat("Class:", strrep(" ", 5), "GeocodingResults", "\n")
+    cat("Geocoded:   ", sum$n_geocoded, "/", sum$n_input, "\n")
+    cat("Mean score: ", round(sum$mean_score, 3), "\n\n")
+    
     which <- match.arg(which)
 
     if (which == "successful") {
-      x$geocoded_data %>%
-        sf::st_sf(crs = x$set_parameters$target_epsg)
+      print(x$geocoded_data[, 2:6])
     } else if (which == "na") {
-      x$geocoded_data_na
+      print(x$geocoded_data_na[, 2:6])
     } else if (which == "unmatched_places") {
-      x$unmatched_places
+      print(x$unmatched_places[, 2:6])
     }
   }
 
@@ -29,22 +33,9 @@ print.GeocodingResults <-
 #'
 #' @export
 #'
-summary.GeocodingResults <- function(x) {
-  message_to_print <-
+summary.GeocodingResults <- function(x, ...) {
+  msg <-
     paste0(
-      "Geocoding results\n\n",
-      "Structure of input data\n",
-      x$set_parameters$id_name, "\t", x$set_parameters$street_name, "\t",
-      x$set_parameters$house_number_name, "\t",
-      x$set_parameters$zip_code_name, "\t", x$set_parameters$place_name, "\n\n",
-      "Set parameters\n",
-      "Requested CRS:                                     ",
-      x$set_parameters$target_epsg, "\n",
-      "Target Quality (everything below is filtered out): ",
-      x$set_parameters$target_quality, "\n",
-      "Target Quality for place matching:                 ",
-      x$set_parameters$place_match_quality, "\n\n",
-      "Statistics\n",
       "Addresses in input data:         ", x$summary_statistics$n_input, "\n",
       "Addresses entering geocoding:    ", x$summary_statistics$n_entering, "\n",
       "Addresses geocoded:              ", x$summary_statistics$n_geocoded, "\n",
@@ -57,7 +48,7 @@ summary.GeocodingResults <- function(x) {
       round(x$summary_statistics$min_score, 3)
     )
 
-  message(message_to_print)
+  cat(msg)
 }
 
 
@@ -68,7 +59,7 @@ summary.GeocodingResults <- function(x) {
 #'
 #' @export
 #'
-plot.GeocodingResults <- function(x) {
+plot.GeocodingResults <- function(x, ...) {
   hist(
     x$geocoded_data$score,
     main = "Distribution of Scores",

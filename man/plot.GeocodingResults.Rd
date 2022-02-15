@@ -4,7 +4,7 @@
 \alias{plot.GeocodingResults}
 \title{Get a simple results plot of the GeocodingResults class}
 \usage{
-\method{plot}{GeocodingResults}(x)
+\method{plot}{GeocodingResults}(x, ...)
 }
 \arguments{
 \item{x}{R object of class 'GeocodingResults'}
