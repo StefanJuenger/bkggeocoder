@@ -78,17 +78,17 @@ bkg_geocode_single_address <- function (
   POST_sf <-
     POST_sf %>%
     dplyr::transmute(
-      street_input = street,
-      house_number_input = house_number,
-      zip_code_input = zip_code,
-      place_input = place,
-      street_output = if("strasse" %in% colnames(.)) strasse else NA,
-      house_number_output = if("haus" %in% colnames(.)) haus else NA,
-      zip_code_output = if("plz" %in% colnames(.)) plz else NA,
-      place_output = if("ort" %in% colnames(.)) ort else NA,
-      AGS = if("ags" %in% colnames(.)) ags else NA,
-      bkg_score = score,
-      coordinate_type = typ
+      street_input = .data$street,
+      house_number_input = .data$house_number,
+      zip_code_input = .data$zip_code,
+      place_input = .data$place,
+      street_output = if("strasse" %in% colnames(.)) .data$strasse else NA,
+      house_number_output = if("haus" %in% colnames(.)) .data$haus else NA,
+      zip_code_output = if("plz" %in% colnames(.)) .data$plz else NA,
+      place_output = if("ort" %in% colnames(.)) .data$ort else NA,
+      AGS = if("ags" %in% colnames(.)) .data$ags else NA,
+      bkg_score = .data$score,
+      coordinate_type = .data$typ
     )
 
   # return object

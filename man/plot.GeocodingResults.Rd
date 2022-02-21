@@ -8,6 +8,8 @@
 }
 \arguments{
 \item{x}{R object of class 'GeocodingResults'}
+
+\item{...}{Further arguments passed on to \code{\link[graphics]{hist}}}
 }
 \description{
 Get a simple results plot of the GeocodingResults class

@@ -14,8 +14,8 @@ bkg_match_addresses <-
     # Convert input address data to character strings
     data_edited$matched$whole_address <- paste0(
       data_edited$matched[[street]] %>%
-        gsub("Str[.]", "Straße", .) %>%
-        gsub("str[.]", "straße", .),
+        gsub("Str[.]", "Stra\u00dfe", .) %>%
+        gsub("str[.]", "stra\u00dfe", .),
       if (house_number %in% colnames(data_edited$matched)) {
           paste0(" ", data_edited$matched[[house_number]])
         }
@@ -59,7 +59,7 @@ bkg_match_addresses <-
       data_edited_pairs <- reclin2::compare_pairs(
         data_edited_pairs,
         on = "whole_address",
-        default_comparator = reclin::jaro_winkler(target_quality),
+        default_comparator = reclin2::jaro_winkler(target_quality),
         inplace = TRUE
       )
       
@@ -94,14 +94,14 @@ bkg_match_addresses <-
     fuzzy_joined_data <- fuzzy_joined_data %>%
       dplyr::mutate(
         score = ifelse(
-          stringr::str_extract(whole_address.x, regex_chr) ==
-          stringr::str_extract(whole_address.y, regex_chr),
-          yes = score,
-          no = score - .05
+          stringr::str_extract(.data$whole_address.x, regex_chr) ==
+          stringr::str_extract(.data$whole_address.y, regex_chr),
+          yes = .data$score,
+          no = .data$score - .05
         )
       )
     
-    geocoded <- dplyr::filter(fuzzy_joined_data, !is.na(RS))
+    geocoded <- dplyr::filter(fuzzy_joined_data, !is.na(.data$RS))
     
     if (isTRUE(verbose)) {
       if (!nrow(fuzzy_joined_data)) {

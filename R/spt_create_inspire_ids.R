@@ -4,9 +4,11 @@
 #'
 #' @param data Object of class \code{sf} containing point geometries
 #' @param type Character string for the requested ID type
+#' @param column_name Output column name prefix. Defaults to "Gitter_ID_{type}".
+#' @param combine Whether to combine the input data with the output values.
 #' @return tibble
 #'
-#' @noRD
+#' @noRd
 
 spt_create_inspire_ids <- function(
   data,
@@ -21,7 +23,7 @@ spt_create_inspire_ids <- function(
 
   coordinate_pairs <- data %>%
     sf::st_coordinates() %>%
-    as_tibble()
+    tibble::as_tibble()
 
   id_name <- glue::glue("{column_name}{type}")
 

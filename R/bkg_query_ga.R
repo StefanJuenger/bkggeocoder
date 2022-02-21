@@ -64,8 +64,10 @@ bkg_query_ga <-
 
   queried_ga <- data.table::rbindlist(queried_ga)
 
+  place <- whole_address <- RS <- x <- y <- NULL
+  
   queried_ga[, list(place, whole_address, RS, x, y)]
-
+  
   queried_ga[, x := gsub(",", ".", x)]
 
   queried_ga[, y := gsub(",", ".", y)]

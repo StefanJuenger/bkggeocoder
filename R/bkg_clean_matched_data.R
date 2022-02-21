@@ -33,23 +33,23 @@ bkg_clean_matched_addresses <-
     fuzzy_joined_data <- fuzzy_joined_data %>%
       sf::st_as_sf(coords = c("x", "y"), crs = 25832) %>%
       dplyr::mutate(
-        address_input = paste(whole_address_input, !!zip_code, !!place),
-        address_output = whole_address_add,
-        GEM = RS %>% stringr::str_sub(1, 9),
-        KRS = RS %>% stringr::str_sub(1, 5),
-        RBZ = RS %>% stringr::str_sub(1, 3),
-        STA = RS %>% stringr::str_sub(1, 2),
+        address_input = paste(.data$whole_address_input,
+                              .data$zip_code_input,
+                              .data$place_input),
+        address_output = .data$whole_address_add,
+        GEM = stringr::str_sub(.data$RS, 1, 9),
+        KRS = stringr::str_sub(.data$RS, 1, 5),
+        RBZ = stringr::str_sub(.data$RS, 1, 3),
+        STA = stringr::str_sub(.data$RS, 1, 2),
         Gitter_ID_1km = spt_create_inspire_ids(data = ., type = "1km"),
         Gitter_ID_100m = spt_create_inspire_ids(data = ., type = "100m"),
-        source = "© GeoBasis-DE / BKG, Deutsche Post Direkt GmbH, Statistisches Bundesamt, Wiesbaden (2021)"
+        source = "\u00a9 GeoBasis-DE / BKG, Deutsche Post Direkt GmbH, Statistisches Bundesamt, Wiesbaden (2021)"
       ) %>%
       tibble::as_tibble() %>%
       dplyr::select(
-        id,
-        score,
-        address_input,
-        address_output,
-        RS, GEM, KRS, RBZ, STA, dplyr::contains("Gitter"), geometry
+        .data$id, .data$score, .data$address_input, .data$address_output,
+        .data$RS, .data$GEM, .data$KRS, .data$RBZ, .data$STA,
+        dplyr::contains("Gitter"), .data$geometry
       ) %>%
       sf::st_as_sf()
 

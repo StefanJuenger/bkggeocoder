@@ -26,6 +26,8 @@
 #' @param target_quality Numeric; targeted quality of second record linkage
 #' round (see details). Corresponds to the threshold value of
 #' \code{\link[reclin2]{jaro_winkler}} and \code{\link[reclin2]{select_greedy}}.
+#' @param verbose Whether to print informative messages and progress bars during
+#' the geocoding process.
 #'
 #' @return Returns a nested list of class GeocodingResult containing an
 #' \code{sf} dataframe of the geocoding results (\code{$geocoded_data}) as well
@@ -49,7 +51,8 @@
 #' the second round of record linkage.
 #'
 #' @importFrom magrittr %>%
-#' @importFrom magrittr %$%
+#' @importFrom dplyr .data
+#' @import data.table
 #' 
 #' @encoding UTF-8
 #'
@@ -156,8 +159,8 @@ bkg_geocode_offline <- function(
   }
 
   # prepare data
-  geocoded_data    <- dplyr::filter(fuzzy_joined_data, !is.na(RS))
-  geocoded_data_na <- dplyr::filter(fuzzy_joined_data, is.na(RS))
+  geocoded_data    <- dplyr::filter(fuzzy_joined_data, !is.na(.data$RS))
+  geocoded_data_na <- dplyr::filter(fuzzy_joined_data, is.na(.data$RS))
 
   # create list
   output_list <- list(
@@ -171,7 +174,7 @@ bkg_geocode_offline <- function(
       n_geocoded = nrow(geocoded_data),
       n_geocoded_error = nrow(geocoded_data_na),
       mean_score = mean(geocoded_data$score, na.rm = TRUE),
-      sd_score = sd(geocoded_data$score, na.rm = TRUE),
+      sd_score = stats::sd(geocoded_data$score, na.rm = TRUE),
       min_score = min(geocoded_data$score, na.rm = TRUE)
     ),
     call = match.call()

@@ -21,8 +21,8 @@ bkg_match_places <-
       dplyr::select(place := !!place, zip_code := !!zip_code) %>%
       dplyr::distinct() %>%
       dplyr::mutate(
-        az_group = stringr::str_sub(place, 1, 3),
-        plz_group = stringr::str_sub(zip_code, 1, 6)
+        az_group = stringr::str_sub(.data$place, 1, 3),
+        plz_group = stringr::str_sub(.data$zip_code, 1, 6)
       )
 
     if (isTRUE(verbose)) {
@@ -88,8 +88,8 @@ bkg_match_places <-
     bkg_zip_places <-
       bkg_zip_places %>%
       dplyr::mutate(
-        az_group = stringr::str_sub(place, 1, 3),
-        plz_group = stringr::str_sub(zip_code, 1, 6)
+        az_group = stringr::str_sub(.data$place, 1, 3),
+        plz_group = stringr::str_sub(.data$zip_code, 1, 6)
       )
     
     # match data (record linking)
@@ -111,12 +111,12 @@ bkg_match_places <-
         data = data_municipalities_pairs
       )
 
-      prediction <- reclin2:::predict.problink_em(
+      prediction <- stats::predict(
         estimates,
         pairs = data_municipalities_pairs,
         add = TRUE
       )
-      
+
       selection <- reclin2::select_greedy(
         pairs = prediction,
         variable = "selected",
@@ -130,16 +130,16 @@ bkg_match_places <-
       ) %>%
         tibble::as_tibble() %>%
         dplyr::select(
-          !!place := place.x,
-          !!zip_code := zip_code.x,
-          place_matched = place.y,
-          zip_code_matched = zip_code.y
+          !!place := .data$place.x,
+          !!zip_code := .data$zip_code.x,
+          place_matched = .data$place.y,
+          zip_code_matched = .data$zip_code.y
         )
     })
 
     unmatched_places <-
       data_municipalities_real %>%
-      dplyr::filter(is.na(place_matched))
+      dplyr::filter(is.na(.data$place_matched))
     
     n_unmatched <- nrow(unmatched_places)
     
@@ -157,7 +157,7 @@ bkg_match_places <-
         data_municipalities_real,
         by = c(place, zip_code)
       ) %>%
-      dplyr::filter(!is.na(place_matched)) %>%
+      dplyr::filter(!is.na(.data$place_matched)) %>%
       dplyr::distinct()
 
     data_unmatched <-

@@ -40,17 +40,17 @@ bkg_export_geocodes <-
       if (which == "all") {
         dplyr::bind_rows(
           data$geocoded_data %>%
-            dplyr::select(-geometry),
+            dplyr::select(-.data$geometry),
           data$geocoded_data_na %>%
-            dplyr::select(-geometry)
+            dplyr::select(-.data$geometry)
         ) %>%
-          dplyr::select(-geometry)
+          dplyr::select(-.data$geometry)
       } else if (which == "successful") {
         data$geocoded_data %>%
-          dplyr::select(-geometry)
+          dplyr::select(-.data$geometry)
       } else if (which == "na") {
         data$geocoded_data_na %>%
-          dplyr::select(-geometry)
+          dplyr::select(-.data$geometry)
       } else if (which == "unmatched_places") {
         data$unmatched_places
       } else {

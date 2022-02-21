@@ -11,6 +11,9 @@
 
 \item{which}{character string; choose which type of the results should be
 displayed}
+
+\item{...}{Further arguments passed on to \code{\link[base]{print.data.frame}}
+or \code{\link[sf]{print.sf}}}
 }
 \description{
 Print the output of the GeocodingResults class

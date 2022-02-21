@@ -12,7 +12,7 @@ bkg_geocode_offline(
   data_path = "../bkgdata/",
   credentials_path = "../bkgcredentials/",
   join_with_original = TRUE,
-  crs = NULL,
+  crs = 3035,
   place_match_quality = 0.5,
   target_quality = 0.5,
   verbose = TRUE
@@ -24,9 +24,10 @@ at least four columns carrying the street name, house number, zip code and
 municipality name. The corresponding column names or indices can be specified
 using the \code{cols} argument.}
 
-\item{cols}{Numeric or character; names or indices of the columns containing
-relevant geocoding the input data. By default, interprets the first four
-columns as street, house number, zip code and municipality (in this order).}
+\item{cols}{Numeric or character of length 4; names or indices of the columns
+containing relevant geocoding the input data. By default, interprets the
+first four columns as street, house number, zip code and municipality (in
+this order).}
 
 \item{data_from_server}{Logical; shall the address data be downloaded from
 GESIS internal server? Requires access to the GESIS net (default is
@@ -44,11 +45,14 @@ that the output should be transformed to. Defaults to EPSG:3035.}
 
 \item{place_match_quality}{Numeric; targeted quality of first record linkage
 round (see details). Corresponds to the threshold value of
-\code{\link[reclin2]{jaro_winkler}} and \code{\link[reclin2]{select_greedy}}.}
+\code{\link[reclin2]{jaro_winkler}}.}
 
 \item{target_quality}{Numeric; targeted quality of second record linkage
 round (see details). Corresponds to the threshold value of
 \code{\link[reclin2]{jaro_winkler}} and \code{\link[reclin2]{select_greedy}}.}
+
+\item{verbose}{Whether to print informative messages and progress bars during
+the geocoding process.}
 }
 \value{
 Returns a nested list of class GeocodingResult containing an

@@ -6,7 +6,7 @@ Version: 0.1.0
 Authors@R: 
     person("Stefan", "Jünger", email = "stefan.juenger@gesis.org", role = "cre")
 Description: R Package for geocoding based on the data of the Federal Agency of 
-    Cartography and Geodesy (BKG) in Germany
+    Cartography and Geodesy (BKG) in Germany.
 License: CC BY 4.0
 Encoding: UTF-8
 LazyData: true
@@ -20,8 +20,9 @@ Imports:
     reclin2,
     sf,
     stringr,
-    tibble
-Depends:
-    data.table,
-    dplyr
+    tibble,
+    rlang,
+    httr,
+    dplyr,
+    data.table
 RoxygenNote: 7.1.2
