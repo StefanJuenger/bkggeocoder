@@ -6,19 +6,13 @@
 #' @noRd
 
 bkg_match_places <-
-  function (
-    data,
-    cols,
-    data_from_server,
-    data_path,
-    credentials_path,
-    place_match_quality,
-    verbose
-  ) {
-    if (isTRUE(verbose)) {
-      message("Retrieving place names from database...")
-    }
-    
+  function (data,
+            cols,
+            data_from_server,
+            data_path,
+            credentials_path,
+            place_match_quality,
+            verbose) {
     place <- cols[4]
     zip_code <- cols[3]
 
@@ -32,31 +26,46 @@ bkg_match_places <-
       )
 
     if (isTRUE(verbose)) {
-      message(paste0("Found ", nrow(data_municipalities), " distinct places."))
+      cli::cli_inform("Found {.val {nrow(data_municipalities)}} distinct place{?s}.")
+      cli::cli_progress_step(
+        msg = "Retrieving place names from database...",
+        msg_done = "Retrieved place names from database.",
+        msg_failed = "Couldn't retrieve place names from database.")
     }
 
     places_file <- "zip_places/ga_zip_places.csv.encryptr.bin"
     
     if (isTRUE(data_from_server)) {
-      .crypt <- file.path("http://10.6.13.132:8000", places_file) %>%
-        url()
+      .crypt <- url(file.path("http://10.6.13.132:8000", places_file))
     } else {
       .crypt <- file.path(data_path, places_file)
     }
-    .crypt <- readRDS(.crypt)
+    
+    .crypt <- tryCatch(
+      expr = readRDS(.crypt),
+      error = function(e) {
+        if (isTRUE(data_from_server)) {
+          cli::cli_abort(c(
+            "Cannot access local server under {.path http://10.6.13.132:8000/}.",
+            "!" = "Verify if you are inside the GESIS intranet or set {.var data_from_server = FALSE}"
+          ))
+        } else {
+          cli::cli_abort("Cannot read place data from {.path {data_path}}")
+        }
+      }
+    )
 
     tmp_out_file <- file("tmp_out_file.csv", "wb") # out file
 
     openssl::decrypt_envelope(
       .crypt$data, .crypt$iv,
       .crypt$session,
-      key = paste0(credentials_path, "/id_rsa"),
-      password = readLines(paste0(credentials_path, "/pwd"))
+      key = file.path(credentials_path, "id_rsa"),
+      password = readLines(file.path(credentials_path, "pwd"))
     ) %>%
       writeBin(tmp_out_file)
 
     close(tmp_out_file)
-
 
     bkg_zip_places <-
       data.table::fread(
@@ -67,6 +76,15 @@ bkg_match_places <-
 
     unlink("tmp_out_file.csv")
 
+    if (isTRUE(verbose)) {
+      cli::cli_progress_done()
+      cli::cli_progress_step(
+        msg = "Linking place records...",
+        msg_done = "Place record linkage finished.",
+        msg_failed = "Couldn't link place records."
+      )
+    }
+    
     bkg_zip_places <-
       bkg_zip_places %>%
       dplyr::mutate(
@@ -124,8 +142,12 @@ bkg_match_places <-
       dplyr::filter(is.na(place_matched))
     
     n_unmatched <- nrow(unmatched_places)
-    if (isTRUE(verbose) && n_unmatched) {
-      message(sprintf("WARNING: %s place(s) left unmatched.", n_unmatched))
+    
+    if (isTRUE(verbose)) {
+      if (n_unmatched) {
+        cli::cli_inform(c("!" = "WARNING: {.val { n_unmatched}} place{?s} left unmatched."))
+      }
+      cli::cli_progress_done()
     }
 
     # add to dataset
@@ -147,15 +169,14 @@ bkg_match_places <-
 
     if (isTRUE(verbose)) {
       if (nrow(data_unmatched) && !nrow(data_matched)) {
-        stop("No address could be matched with any place. Check your input!")
+        cli::cli_abort("No address could be matched with any place. Check your input!")
       } else if (!nrow(data_unmatched) && nrow(data_matched)) {
-        message("SUCCESS: All addresses could be place-matched.")
+        cli::cli_alert_success("All addresses could be place-matched.")
       } else if (nrow(data_unmatched) && nrow(data_matched)) {
-        message(sprintf(
-          "WARNING: %s out of %s address(es) could be place-matched.",
-          nrow(data_matched),
-          nrow(data)
-        ))
+        cli::cli_inform(c("i" = paste(
+          "{.val {nrow(data_matched)}} out of {.val {nrow(data)}}",
+          "address{?es} could be place-matched."
+        )))
       }
     }
 

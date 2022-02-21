@@ -6,46 +6,42 @@
 
 bkg_query_ga <-
   function(places, data_from_server, data_path, credentials_path, verbose) {
-
   # initialize progress bar
   if (isTRUE(verbose)) {
-    pb_query <-
-      progress::progress_bar$new(
-        total = length(places),
-        force = TRUE,
-        clear = FALSE
+      cli::cli_progress_bar(
+        name = "Reading address data",
+        total = length(places)
       )
-
-    pb_query$tick(0)
-  }
-
+    }
+    
   queried_ga <-
-    lapply(places, function(i) {
-
+    lapply(places, function(place) {
       if (isTRUE(verbose)) {
-        pb_query$tick()
+        cli::cli_progress_update(.envir = parent.frame(2))
       }
-
-      dataset_name <-
-        i %>%
-        gsub("/", "_", .)
+      
+      dataset_name <- gsub("/", "_", place)
 
       if(isTRUE(data_from_server)) {
-        .crypt <-
-          paste0(
-            "http://10.6.13.132:8000/ga/",
-            dataset_name,
-            ".csv.encryptr.bin") %>%
+        .crypt <- paste0(
+          "http://10.6.13.132:8000/ga/",
+          dataset_name,
+          ".csv.encryptr.bin"
+        ) %>%
           utils::URLencode() %>%
           url() %>%
           readRDS()
       } else {
-        .crypt <-
-          paste0(data_path, "/ga/", dataset_name, ".csv.encryptr.bin") %>%
+        .crypt <- paste0(
+          data_path,
+          "/ga/",
+          dataset_name,
+          ".csv.encryptr.bin"
+        ) %>%
           readRDS()
       }
 
-      tmp_out_file <- file("tmp_out_file.csv", "wb") # out file
+      tmp_out_file <- tempfile(pattern = "tmp_out_file", fileext = ".csv")
 
       openssl::decrypt_envelope(
         .crypt$data, .crypt$iv,
@@ -55,17 +51,13 @@ bkg_query_ga <-
       ) %>%
         writeBin(tmp_out_file)
 
-      close(tmp_out_file)
+      i_data <- data.table::fread(
+        tmp_out_file,
+        colClasses = 'character',
+        encoding = "UTF-8"
+      )
 
-
-      i_data <-
-        data.table::fread(
-          "tmp_out_file.csv",
-          colClasses = 'character',
-          encoding = "UTF-8"
-        )
-
-      unlink("tmp_out_file.csv")
+      unlink(tmp_out_file)
 
       i_data
     })
@@ -79,10 +71,9 @@ bkg_query_ga <-
   queried_ga[, y := gsub(",", ".", y)]
   
   if (isTRUE(verbose)) {
-    message(sprintf(
-      "SUCCESS: Read in %s addresses within %s municipalities",
-      nrow(queried_ga),
-      length(unique(queried_ga$place))
+    cli::cli_alert_info(paste(
+      "Read in {.val {nrow(queried_ga)}} address{?es} within",
+      "{.val {length(unique(queried_ga$place))}} municipalit{?y/ies}."
     ))
   }
   

@@ -8,42 +8,40 @@ bkg_clean_matched_addresses <-
     place <- cols[4]
     
     if (isTRUE(verbose)) {
-      message("Cleaning up geocoding output...")
+      cli::cli_progress_step(
+        msg = "Cleaning up geocoding output...",
+        msg_done = "Cleaned up geocoding output.",
+        msg_failed = "Failed to clean up geocoding output."
+      )
     }
     
-    fuzzy_joined_data <-
-      fuzzy_joined_data %>%
+    fuzzy_joined_data <- fuzzy_joined_data %>%
       dplyr::rename_at(
         dplyr::vars(dplyr::contains(".x")),
-        ~stringr::str_replace(., ".x", "_input")) %>%
+        ~stringr::str_replace(., ".x", "_input")
+      ) %>%
       dplyr::rename_at(
         dplyr::vars(dplyr::contains(".y")),
-        ~stringr::str_replace(., ".y", "_output"))
+        ~stringr::str_replace(., ".y", "_output")
+      )
 
-    # set missing coordinates to zero to be compliant with sf
+    # Set missing coordinates to zero to be compliant with sf
     fuzzy_joined_data$x[is.na(fuzzy_joined_data$x)] <- 0
     fuzzy_joined_data$y[is.na(fuzzy_joined_data$y)] <- 0
 
     # clean dataset
-    fuzzy_joined_data <-
-      fuzzy_joined_data %>%
+    fuzzy_joined_data <- fuzzy_joined_data %>%
+      sf::st_as_sf(coords = c("x", "y"), crs = 25832) %>%
       dplyr::mutate(
-        address_input =
-          paste(whole_address_input, {zip_code}, {place}),
-        address_output =
-          paste(whole_address_add)#, zip_code_output, place_output)
-      ) %>%
-      dplyr::mutate(
+        address_input = paste(whole_address_input, !!zip_code, !!place),
+        address_output = whole_address_add,
         GEM = RS %>% stringr::str_sub(1, 9),
         KRS = RS %>% stringr::str_sub(1, 5),
         RBZ = RS %>% stringr::str_sub(1, 3),
-        STA = RS %>% stringr::str_sub(1, 2)
-      ) %>%
-      sf::st_as_sf(coords = c("x", "y"), crs = 25832) %>%
-      sf::st_transform(3035) %>%
-      dplyr::mutate(
+        STA = RS %>% stringr::str_sub(1, 2),
         Gitter_ID_1km = spt_create_inspire_ids(data = ., type = "1km"),
-        Gitter_ID_100m = spt_create_inspire_ids(data = ., type = "100m")
+        Gitter_ID_100m = spt_create_inspire_ids(data = ., type = "100m"),
+        source = "© GeoBasis-DE / BKG, Deutsche Post Direkt GmbH, Statistisches Bundesamt, Wiesbaden (2021)"
       ) %>%
       tibble::as_tibble() %>%
       dplyr::select(
@@ -53,10 +51,11 @@ bkg_clean_matched_addresses <-
         address_output,
         RS, GEM, KRS, RBZ, STA, dplyr::contains("Gitter"), geometry
       ) %>%
-      dplyr::mutate(
-        source =
-          "© GeoBasis-DE / BKG, Deutsche Post Direkt GmbH, Statistisches Bundesamt, Wiesbaden (2021)"
-      )
+      sf::st_as_sf()
 
+    if (isTRUE(verbose)) {
+      cli::cli_progress_done()
+    }
+    
     fuzzy_joined_data
   }

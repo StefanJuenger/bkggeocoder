@@ -7,9 +7,10 @@
 #' at least four columns carrying the street name, house number, zip code and
 #' municipality name. The corresponding column names or indices can be specified
 #' using the \code{cols} argument.
-#' @param cols Numeric or character; names or indices of the columns containing
-#' relevant geocoding the input data. By default, interprets the first four
-#' columns as street, house number, zip code and municipality (in this order).
+#' @param cols Numeric or character of length 4; names or indices of the columns
+#' containing relevant geocoding the input data. By default, interprets the
+#' first four columns as street, house number, zip code and municipality (in
+#' this order).
 #' @param data_from_server Logical; shall the address data be downloaded from
 #' GESIS internal server? Requires access to the GESIS net (default is
 #' \code{FALSE})
@@ -21,7 +22,7 @@
 #' that the output should be transformed to. Defaults to EPSG:3035.
 #' @param place_match_quality Numeric; targeted quality of first record linkage
 #' round (see details). Corresponds to the threshold value of
-#' \code{\link[reclin2]{jaro_winkler}} and \code{\link[reclin2]{select_greedy}}.
+#' \code{\link[reclin2]{jaro_winkler}}.
 #' @param target_quality Numeric; targeted quality of second record linkage
 #' round (see details). Corresponds to the threshold value of
 #' \code{\link[reclin2]{jaro_winkler}} and \code{\link[reclin2]{select_greedy}}.
@@ -61,22 +62,37 @@ bkg_geocode_offline <- function(
   data_path = "../bkgdata/",
   credentials_path = "../bkgcredentials/",
   join_with_original = TRUE,
-  crs = NULL,
+  crs = 3035,
   place_match_quality = .5,
   target_quality = .5,
   verbose = TRUE
 ) {
+  stopifnot(is.data.frame(data))
+  stopifnot(is.logical(data_from_server))
+  stopifnot(is.logical(join_with_original))
+  stopifnot(is.numeric(place_match_quality))
+  stopifnot(is.numeric(target_quality))
+  if (isFALSE(data_from_server)) {
+    stopifnot(dir.exists(data_path))
+    stopifnot(dir.exists(credentials_path))
+  }
+  tryCatch(
+    expr = sf::st_crs(crs),
+    error = function(e) {
+      cli::cli_abort("{.var crs} must be parsable by {.fn sf::st_crs}")
+    }
+  )
 
   if (isTRUE(verbose)) {
-    message(
-      paste(
-        "** Starting offline geocoding **\n",
-        sprintf("Number of distinct addresses: %s", nrow(data)),
-        sprintf("Targeted quality of geocoding: %s %%", target_quality),
-        sep = "\n"
-      )
+    cli::cli_h1("Starting offline geocoding")
+    cli::cat_line()
+    cli::cli_inform(c(
+      "i" = sprintf("Number of distinct addresses: {.val {%s}}", nrow(data)),
+      "i" = sprintf("Targeted quality of place-matching: {.val {%s}}", place_match_quality),
+      "i" = sprintf("Targeted quality of geocoding: {.val {%s}}", target_quality))
     )
-    message("\n--- Subsetting data ", strrep("-", 20))
+    
+    cli::cli_h2("Subsetting data")
   }
   
   cols <- names(data)[1:4]
@@ -84,85 +100,82 @@ bkg_geocode_offline <- function(
   data <- cbind(data.frame(id = row.names(data)), data)
 
   # Place Matching ----
-  data_edited <-
-    bkg_match_places(
-      data,
-      cols,
-      data_from_server,
-      data_path,
-      credentials_path,
-      place_match_quality,
-      verbose
-    )
+  data_edited <- bkg_match_places(
+    data,
+    cols,
+    data_from_server,
+    data_path,
+    credentials_path,
+    place_match_quality,
+    verbose
+  )
 
   # Querying Database ----
   if (isTRUE(verbose)) {
-    message("\n--- Preparing database ", strrep("-", 20))
+    cli::cli_h2("Preparing database")
   }
 
-  house_coordinates <-
-    bkg_query_ga(
-      data_edited$matched$place_matched %>% unique(),
-      data_from_server,
-      data_path,
-      credentials_path,
-      verbose
-    )
+  house_coordinates <- bkg_query_ga(
+    data_edited$matched$place_matched %>% unique(),
+    data_from_server,
+    data_path,
+    credentials_path,
+    verbose
+  )
 
   data.table::setkeyv(house_coordinates, c("zip_code", "place"))
 
   # Retrieving Geocoordinates ----
   if (isTRUE(verbose)) {
-    message("\n--- Geocoding input ", strrep("-", 20))
+    cli::cli_h2("Geocoding input data")
   }
 
-  fuzzy_joined_data <-
-    bkg_match_addresses(
-      data_edited,
-      cols,
-      house_coordinates,
-      target_quality,
-      verbose
-    )
+  fuzzy_joined_data <- bkg_match_addresses(
+    data_edited,
+    cols,
+    house_coordinates,
+    target_quality,
+    verbose
+  )
 
   # Data Cleaning ----
-  fuzzy_joined_data <-
-    bkg_clean_matched_addresses(fuzzy_joined_data, cols, verbose)
+  fuzzy_joined_data <- bkg_clean_matched_addresses(
+    fuzzy_joined_data,
+    cols,
+    verbose
+  )
 
   if (isTRUE(join_with_original)) {
-    fuzzy_joined_data <-
-      dplyr::left_join(data, fuzzy_joined_data, by = "id")
+    fuzzy_joined_data <- dplyr::left_join(data, fuzzy_joined_data, by = "id") %>%
+      sf::st_as_sf()
+    
   }
-
-  fuzzy_joined_data <- sf::st_as_sf(fuzzy_joined_data, crs = 3035)
   
   if (!missing(crs)) {
     fuzzy_joined_data <- sf::st_transform(fuzzy_joined_data, crs = crs)
   }
 
   # prepare data
-  geocoded_data    <- fuzzy_joined_data %>% dplyr::filter(!is.na(RS))
-  geocoded_data_na <- fuzzy_joined_data %>% dplyr::filter(is.na(RS))
+  geocoded_data    <- dplyr::filter(fuzzy_joined_data, !is.na(RS))
+  geocoded_data_na <- dplyr::filter(fuzzy_joined_data, is.na(RS))
 
   # create list
-  output_list <-
-    list(
-      geocoded_data = geocoded_data,
-      geocoded_data_na = geocoded_data_na,
-      non_geocoded_data = data_edited$data_unmatched,
-      unmatched_places = data_edited$unmatched_places,
-      summary_statistics =
-        tibble::tibble(
-          n_input = nrow(data),
-          n_entering = nrow(data_edited$matched),
-          n_geocoded = nrow(geocoded_data),
-          n_geocoded_error = nrow(geocoded_data_na),
-          mean_score = mean(geocoded_data$score, na.rm = TRUE),
-          sd_score = sd(geocoded_data$score, na.rm = TRUE),
-          min_score = min(geocoded_data$score, na.rm = TRUE)
-        ),
-      call = match.call()
-    )
+  output_list <- list(
+    geocoded_data = geocoded_data,
+    geocoded_data_na = geocoded_data_na,
+    non_geocoded_data = data_edited$data_unmatched,
+    unmatched_places = data_edited$unmatched_places,
+    summary_statistics = tibble::tibble(
+      n_input = nrow(data),
+      n_entering = nrow(data_edited$matched),
+      n_geocoded = nrow(geocoded_data),
+      n_geocoded_error = nrow(geocoded_data_na),
+      mean_score = mean(geocoded_data$score, na.rm = TRUE),
+      sd_score = sd(geocoded_data$score, na.rm = TRUE),
+      min_score = min(geocoded_data$score, na.rm = TRUE)
+    ),
+    call = match.call()
+  )
 
   class(output_list) <- c("GeocodingResults", class(output_list))
 
