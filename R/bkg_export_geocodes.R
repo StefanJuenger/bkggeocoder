@@ -10,52 +10,48 @@
 #' @param overwrite logical; define whether exported file get overwritten
 #' (default is true)
 #'
-#' @importFrom magrittr %>%
-#'
 #' @export
 
-bkg_export_geocodes <-
-  function(
-    data,
-    which = c("all", "successful", "na", "unmatched_places"),
-    file,
-    overwrite = TRUE
+bkg_export_geocodes <- function(
+  data,
+  which = c("all", "successful", "na", "unmatched_places"),
+  file,
+  overwrite = TRUE
   ) {
+  which <- match.arg(which)
 
-    which <- match.arg(which)
-
-    if (!("GeocodingResults" %in% class(data))) {
-      stop("Not an object of class GeocodingResults")
-    }
-
-    export_function <- function (x, file) {
-      if (stringr::str_detect(file, ".csv")) {
-        readr::write_csv(x, file)
-      } else if (stringr::str_detect(file, ".xlsx")) {
-        openxlsx::write.xlsx(x, file, overwrite = overwrite)
-      }
-    }
-
-    data_to_export <-
-      if (which == "all") {
-        dplyr::bind_rows(
-          data$geocoded_data %>%
-            dplyr::select(-.data$geometry),
-          data$geocoded_data_na %>%
-            dplyr::select(-.data$geometry)
-        ) %>%
-          dplyr::select(-.data$geometry)
-      } else if (which == "successful") {
-        data$geocoded_data %>%
-          dplyr::select(-.data$geometry)
-      } else if (which == "na") {
-        data$geocoded_data_na %>%
-          dplyr::select(-.data$geometry)
-      } else if (which == "unmatched_places") {
-        data$unmatched_places
-      } else {
-        stop("No valid which argument.")
-      }
-
-    export_function(data_to_export, file)
+  if (!inherits(data, "GeocodingResults")) {
+    cli::cli_abort(
+      "i" = "Expected object of class {.cls GeocodingResults}",
+      "x" = "Got object of class {.cls {class(data)}}"
+    )
   }
+
+  export_function <- function (x, file) {
+    if (stringr::str_detect(file, ".csv")) {
+      if (!file.exists(file) || isTRUE(overwrite)) {
+        readr::write_csv(x, file)
+      }
+    } else if (stringr::str_detect(file, ".xlsx")) {
+      openxlsx::write.xlsx(x, file, overwrite = isTRUE(overwrite))
+    }
+  }
+
+  data_to_export <- if (which == "all") {
+    dplyr::bind_rows(
+      dplyr::select(data$geocoded_data, -.data$geometry),
+      dplyr::select(data$geocoded_data_na, -.data$geometry)
+    ) %>%
+      dplyr::select(-.data$geometry)
+    } else if (which == "successful") {
+       dplyr::select(data$geocoded_data, -.data$geometry)
+    } else if (which == "na") {
+      dplyr::select(data$geocoded_data_na, -.data$geometry)
+    } else if (which == "unmatched_places") {
+      data$unmatched_places
+    }
+
+  export_function(data_to_export, file)
+  
+  invisible()
+}

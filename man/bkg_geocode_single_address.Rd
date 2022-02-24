@@ -21,10 +21,16 @@ bkg_geocode_single_address(
 
 \item{place}{Character string for the place (i.e., municipality/city)}
 
-\item{epsg}{Character string for the requested CSR}
+\item{epsg}{Character string or numeric of an EPSG code describing the
+requested CRS}
+}
+\value{
+Object of class \code{sf} containing the geometries of the input
+address
 }
 \description{
-Geocoding of a single address to a geo-coordinate through the BKG Geocoder
+Geocoding of a single address to a geo-coordinate through the
+BKG Geocoder WFS
 }
 \examples{
 
@@ -37,5 +43,4 @@ bkg_geocode_single_address(
   epsg         = "3035"
 )
 }
-
 }

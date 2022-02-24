@@ -37,19 +37,18 @@ print.GeocodingResults <-
 #' @export
 #'
 summary.GeocodingResults <- function(object, ...) {
-  msg <-
-    paste0(
-      "Addresses in input data:         ", object$summary_statistics$n_input, "\n",
-      "Addresses entering geocoding:    ", object$summary_statistics$n_entering, "\n",
-      "Addresses geocoded:              ", object$summary_statistics$n_geocoded, "\n",
-      "Addresses geocoded with errors:  ", object$summary_statistics$n_geocoded_error, "\n",
-      "Mean score:                      ",
-      round(object$summary_statistics$mean_score, 3), "\n",
-      "Standard deviation of score:     ",
-      round(object$summary_statistics$sd_score, 3), "\n",
-      "Minimum score:                   ",
-      round(object$summary_statistics$min_score, 3)
-    )
+  msg <- paste0(
+    "Addresses in input data:         ", object$summary_statistics$n_input, "\n",
+    "Addresses entering geocoding:    ", object$summary_statistics$n_entering, "\n",
+    "Addresses geocoded:              ", object$summary_statistics$n_geocoded, "\n",
+    "Addresses geocoded with errors:  ", object$summary_statistics$n_geocoded_error, "\n",
+    "Mean score:                      ",
+    round(object$summary_statistics$mean_score, 3), "\n",
+    "Standard deviation of score:     ",
+    round(object$summary_statistics$sd_score, 3), "\n",
+    "Minimum score:                   ",
+    round(object$summary_statistics$min_score, 3)
+  )
 
   cat(msg)
 }

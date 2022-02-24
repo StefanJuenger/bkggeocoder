@@ -1,6 +1,6 @@
 #' Geocoding of a multiple addresses (BKG offline version)
 #'
-#' Geocoding of a multiple addresses using record linkage and an
+#' @description Geocoding of a multiple addresses using record linkage and an
 #' address/coordinate database (provided by the BKG)
 #'
 #' @param data Dataframe containing address data. The dataframe must contain
@@ -8,18 +8,20 @@
 #' municipality name. The corresponding column names or indices can be specified
 #' using the \code{cols} argument.
 #' @param cols Numeric or character of length 4; names or indices of the columns
-#' containing relevant geocoding the input data. By default, interprets the
+#' containing relevant geocoding information. By default, interprets the
 #' first four columns as street, house number, zip code and municipality (in
 #' this order).
 #' @param data_from_server Logical; shall the address data be downloaded from
 #' GESIS internal server? Requires access to the GESIS net (default is
 #' \code{FALSE})
-#' @param data_path Path to the address data provided by Stefan Jünger
+#' @param data_path Path to the address data provided by Stefan Jünger. Ignored
+#' if \code{data_from_server = TRUE}.
 #' @param credentials_path Path to credentials package provided by Stefan Jünger
 #' @param join_with_original Logical; should the output be joined with the
 #' input data?
-#' @param crs EPSG code, WKT/PROJ4 character string or object of class \code{crs}
-#' that the output should be transformed to. Defaults to EPSG:3035.
+#' @param crs Any kind of object that can be parsed by \code{\link[sf]{st_crs}}
+#' that the output data should be transformed to (e.g. EPSG code, WKT/PROJ4
+#' character string or object of class \code{crs}). Defaults to EPSG:3035.
 #' @param place_match_quality Numeric; targeted quality of first record linkage
 #' round (see details). Corresponds to the threshold value of
 #' \code{\link[reclin2]{jaro_winkler}}.
@@ -29,11 +31,11 @@
 #' @param verbose Whether to print informative messages and progress bars during
 #' the geocoding process.
 #'
-#' @return Returns a nested list of class GeocodingResult containing an
+#' @returns Returns a nested list of class GeocodingResult containing an
 #' \code{sf} dataframe of the geocoding results (\code{$geocoded_data}) as well
 #' as a dataframe with non-matched place names (\code{$unmatched_places}),
-#' non-matched addresses (\code{$non_geocoded_data}) and matches with unresolved
-#' regional key (\code{$geocoded_data_na}). The object also includes a call
+#' addresses with non-matched places (\code{$non_geocoded_data}) and non-matched
+#' addresses (\code{$geocoded_data_na}). The object also includes a call
 #' object and descriptive summary statistics. Please note that original columns
 #' retrieved the suffix \code{"_input"}.
 #'
@@ -45,10 +47,13 @@
 #' input addresses together with the matched results are then again matched
 #' against the addresses in the address/geocoordinate database (second round of
 #' record linkage). Again, you can play with the quality by adjusting
-#' the \code{target_quality} parameter. 
+#' the \code{target_quality} parameter.
+#' 
 #' The overall quality of the geocoding can be evaluated by looking at the
 #' values of the column \code{score} (ranging from 0 to 1), which is based on
-#' the second round of record linkage.
+#' the second round of record linkage. In general, for both rounds of record
+#' linkage, a score of above 0.9 can be considered a good match. If the score
+#' falls below 0.6, the result should be thoroughly scrutinized.
 #'
 #' @importFrom magrittr %>%
 #' @importFrom dplyr .data
@@ -65,9 +70,9 @@ bkg_geocode_offline <- function(
   data_path = "../bkgdata/",
   credentials_path = "../bkgcredentials/",
   join_with_original = TRUE,
-  crs = 3035,
-  place_match_quality = .5,
-  target_quality = .5,
+  crs = 3035L,
+  place_match_quality = 0.9,
+  target_quality = 0.9,
   verbose = TRUE
 ) {
   stopifnot(is.data.frame(data))
@@ -79,26 +84,24 @@ bkg_geocode_offline <- function(
     stopifnot(dir.exists(data_path))
     stopifnot(dir.exists(credentials_path))
   }
-  tryCatch(
-    expr = sf::st_crs(crs),
-    error = function(e) {
-      cli::cli_abort("{.var crs} must be parsable by {.fn sf::st_crs}")
-    }
-  )
+  crs_err <- function(e) {
+    cli::cli_abort("{.var crs} must be parsable by {.fn sf::st_crs}")
+  }
+  tryCatch(expr = sf::st_crs(crs), error = crs_err, warning = crs_err)
 
   if (isTRUE(verbose)) {
     cli::cli_h1("Starting offline geocoding")
     cli::cat_line()
     cli::cli_inform(c(
-      "i" = sprintf("Number of distinct addresses: {.val {%s}}", nrow(data)),
-      "i" = sprintf("Targeted quality of place-matching: {.val {%s}}", place_match_quality),
-      "i" = sprintf("Targeted quality of geocoding: {.val {%s}}", target_quality))
+      "i" = "Number of distinct addresses: {.val {nrow(data)}}",
+      "i" = "Targeted quality of place-matching: {.val {place_match_quality}}",
+      "i" = "Targeted quality of geocoding: {.val {target_quality}}")
     )
     
     cli::cli_h2("Subsetting data")
   }
   
-  cols <- names(data)[1:4]
+  cols <- names(data[cols])
   
   data <- cbind(data.frame(id = row.names(data)), data)
 
@@ -114,12 +117,8 @@ bkg_geocode_offline <- function(
   )
 
   # Querying Database ----
-  if (isTRUE(verbose)) {
-    cli::cli_h2("Preparing database")
-  }
-
   house_coordinates <- bkg_query_ga(
-    data_edited$matched$place_matched %>% unique(),
+    unique(data_edited$matched$place_matched),
     data_from_server,
     data_path,
     credentials_path,
@@ -151,18 +150,16 @@ bkg_geocode_offline <- function(
   if (isTRUE(join_with_original)) {
     fuzzy_joined_data <- dplyr::left_join(data, fuzzy_joined_data, by = "id") %>%
       sf::st_as_sf()
-    
   }
   
   if (!missing(crs)) {
     fuzzy_joined_data <- sf::st_transform(fuzzy_joined_data, crs = crs)
   }
 
-  # prepare data
+  # Create Output ----
   geocoded_data    <- dplyr::filter(fuzzy_joined_data, !is.na(.data$RS))
   geocoded_data_na <- dplyr::filter(fuzzy_joined_data, is.na(.data$RS))
 
-  # create list
   output_list <- list(
     geocoded_data = geocoded_data,
     geocoded_data_na = geocoded_data_na,

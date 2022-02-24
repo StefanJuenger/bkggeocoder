@@ -6,16 +6,16 @@
 
 bkg_query_ga <-
   function(places, data_from_server, data_path, credentials_path, verbose) {
-  # initialize progress bar
   if (isTRUE(verbose)) {
-      cli::cli_progress_bar(
-        name = "Reading address data",
-        total = length(places)
-      )
-    }
-    
-  queried_ga <-
-    lapply(places, function(place) {
+    cli::cli_h2("Preparing database")
+    cli::cli_progress_bar(
+      name = "Reading address data",
+      total = length(places)
+    )
+  }
+  
+  # Load address dataset for each unique place ----
+  queried_ga <- lapply(places, function(place) {
       if (isTRUE(verbose)) {
         cli::cli_progress_update(.envir = parent.frame(2))
       }
@@ -62,6 +62,7 @@ bkg_query_ga <-
       i_data
     })
 
+  # Clean data ----
   queried_ga <- data.table::rbindlist(queried_ga)
 
   place <- whole_address <- RS <- x <- y <- NULL

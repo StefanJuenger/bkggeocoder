@@ -12,9 +12,9 @@ bkg_geocode_offline(
   data_path = "../bkgdata/",
   credentials_path = "../bkgcredentials/",
   join_with_original = TRUE,
-  crs = 3035,
-  place_match_quality = 0.5,
-  target_quality = 0.5,
+  crs = 3035L,
+  place_match_quality = 0.9,
+  target_quality = 0.9,
   verbose = TRUE
 )
 }
@@ -33,15 +33,17 @@ this order).}
 GESIS internal server? Requires access to the GESIS net (default is
 \code{FALSE})}
 
-\item{data_path}{Path to the address data provided by Stefan Jünger}
+\item{data_path}{Path to the address data provided by Stefan Jünger. Ignored
+if \code{data_from_server = TRUE}.}
 
 \item{credentials_path}{Path to credentials package provided by Stefan Jünger}
 
 \item{join_with_original}{Logical; should the output be joined with the
 input data?}
 
-\item{crs}{EPSG code, WKT/PROJ4 character string or object of class \code{crs}
-that the output should be transformed to. Defaults to EPSG:3035.}
+\item{crs}{Any kind of object that can be parsed by \code{\link[sf]{st_crs}}
+that the output data should be transformed to (e.g. EPSG code, WKT/PROJ4
+character string or object of class \code{crs}). Defaults to EPSG:3035.}
 
 \item{place_match_quality}{Numeric; targeted quality of first record linkage
 round (see details). Corresponds to the threshold value of
@@ -76,8 +78,11 @@ adjusting the \code{place_match_quality} parameter. In a second step, the
 input addresses together with the matched results are then again matched
 against the addresses in the address/geocoordinate database (second round of
 record linkage). Again, you can play with the quality by adjusting
-the \code{target_quality} parameter. 
+the \code{target_quality} parameter.
+
 The overall quality of the geocoding can be evaluated by looking at the
 values of the column \code{score} (ranging from 0 to 1), which is based on
-the second round of record linkage.
+the second round of record linkage. In general, for both rounds of record
+linkage, a score of above 0.9 can be considered a good match. If the score
+falls below 0.6, the result should be thoroughly scrutinized.
 }
