@@ -9,7 +9,9 @@ bkg_geocode_single_address(
   house_number,
   zip_code,
   place,
-  epsg = "3035"
+  epsg = "3035",
+  bbox = NULL,
+  max_features = 1
 )
 }
 \arguments{
@@ -23,6 +25,10 @@ bkg_geocode_single_address(
 
 \item{epsg}{Character string or numeric of an EPSG code describing the
 requested CRS}
+
+\item{max_features}{Numeric or character specifying the maximum amount of
+results to return. If \code{> 1}, returns matches in descending order by
+BKG score.}
 }
 \value{
 Object of class \code{sf} containing the geometries of the input

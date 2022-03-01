@@ -25,7 +25,7 @@ municipality name. The corresponding column names or indices can be specified
 using the \code{cols} argument.}
 
 \item{cols}{Numeric or character of length 4; names or indices of the columns
-containing relevant geocoding the input data. By default, interprets the
+containing relevant geocoding information. By default, interprets the
 first four columns as street, house number, zip code and municipality (in
 this order).}
 
@@ -60,8 +60,8 @@ the geocoding process.}
 Returns a nested list of class GeocodingResult containing an
 \code{sf} dataframe of the geocoding results (\code{$geocoded_data}) as well
 as a dataframe with non-matched place names (\code{$unmatched_places}),
-non-matched addresses (\code{$non_geocoded_data}) and matches with unresolved
-regional key (\code{$geocoded_data_na}). The object also includes a call
+addresses with non-matched places (\code{$non_geocoded_data}) and non-matched
+addresses (\code{$geocoded_data_na}). The object also includes a call
 object and descriptive summary statistics. Please note that original columns
 retrieved the suffix \code{"_input"}.
 }

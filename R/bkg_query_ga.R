@@ -10,7 +10,12 @@ bkg_query_ga <-
     cli::cli_h2("Preparing database")
     cli::cli_progress_bar(
       name = "Reading address data",
-      total = length(places)
+      total = length(places),
+      format = paste(
+        "{cli::pb_name} {cli::pb_bar} {cli::pb_current}/{cli::pb_total} places |",
+        "ETA {cli::pb_eta}"
+      ),
+      format_failed = "Failed at address {cli::pb_current}/{cli::pb_total}."
     )
   }
   

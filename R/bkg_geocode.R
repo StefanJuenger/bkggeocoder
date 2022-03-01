@@ -2,13 +2,8 @@
 #'
 #' Geocoding of a multiple addresses to a geo-coordinate through the BKG Geocoder
 #'
-#' @param data Data object that contains the columns for the parameters defined
-#' next
-#' @param street Character string for the street name
-#' @param house_number Character string for the house number
-#' @param zip_code Character string for the zip code
-#' @param place Character string for the place (i.e., municipality/city)
 #' @param epsg Character string for the requested CSR
+#' @inheritParams bkg_geocode_offline
 #'
 #' @return Returns a tidy simple features data frame of the original data object
 #' and the requested information from the geocoding service. Please note that
@@ -45,46 +40,52 @@
 #'   )
 #' }
 #'
-#' @importFrom magrittr %>%
-#'
 #' @export
 
 bkg_geocode <- function (
   data = NULL,
-  street = "street",
-  house_number = "house_number",
-  zip_code = "zip_code",
-  place = "place",
-  epsg = "3035"
+  cols = 1L:4L,
+  epsg = "3035",
+  verbose = TRUE
 ) {
-
-  if (is.null(data)) {
+  cols <- names(data[cols])
+    
+  if (!length(data)) {
+    cli::cli_abort(paste(
+      "Either {.var data} or the alternative arguments {.var street},",
+      "{.var house_number}, {.var zip_code} and {.var place} must be",
+      "specified."
+    ))
+  }
+    
+  if (isTRUE(verbose)) {
+    cli::cli_progress_bar(
+      name = "Geocoding addresses",
+      total = nrow(data),
+      format = paste(
+        "{cli::pb_name} {cli::pb_bar} {cli::pb_current}/{cli::pb_total} |",
+        "ETA {cli::pb_eta}"
+      ),
+      format_failed = "Failed at address {cli::pb_current}/{cli::pb_total}."
+    )
+  }
+  
+  geocoded_data <- lapply(1:nrow(data), function(i) {
+    if (isTRUE(verbose)) {
+      cli::cli_progress_update(.envir = parent.frame(2))
+    }
+    
     bkg_geocode_single_address(
-      street = street,
-      house_number = house_number,
-      zip_code = zip_code,
-      place = place,
+      street = data[[cols[1]]][i],
+      house_number = data[[cols[2]]][i],
+      zip_code = data[[cols[3]]][i],
+      place = data[[cols[4]]][i],
       epsg = epsg
     )
-  } else {
-    lapply(1:nrow(data), function (i) {
 
-      message(paste0("Turning to row ", i, " from ", nrow(data)))
-
-      bkg_geocode_single_address(
-        street = data[[street]][i],
-        house_number = data[[house_number]][i],
-        zip_code = data[[zip_code]][i],
-        place = data[[place]][i],
-        epsg = epsg
-      )
-
-    }) %>%
-      dplyr::bind_rows(.) %>%
-      dplyr::bind_cols(
-        data,
-        .
-      ) %>%
-      sf::st_sf(crs = eval(parse(text = epsg)), sf_column_name = "geometry")
-  }
+  })
+  
+  geocoded_data <-  dplyr::bind_rows(geocoded_data) %>%
+    dplyr::bind_cols(data, .) %>%
+    sf::st_sf(crs = eval(parse(text = epsg)), sf_column_name = "geometry")
 }

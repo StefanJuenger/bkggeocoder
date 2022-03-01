@@ -4,28 +4,23 @@
 \alias{bkg_geocode}
 \title{Geocoding of a multiple addresses to a geo-coordinate}
 \usage{
-bkg_geocode(
-  data = NULL,
-  street = "street",
-  house_number = "house_number",
-  zip_code = "zip_code",
-  place = "place",
-  epsg = "3035"
-)
+bkg_geocode(data = NULL, cols = 1L:4L, epsg = "3035", verbose = TRUE)
 }
 \arguments{
-\item{data}{Data object that contains the columns for the parameters defined
-next}
+\item{data}{Dataframe containing address data. The dataframe must contain
+at least four columns carrying the street name, house number, zip code and
+municipality name. The corresponding column names or indices can be specified
+using the \code{cols} argument.}
 
-\item{street}{Character string for the street name}
-
-\item{house_number}{Character string for the house number}
-
-\item{zip_code}{Character string for the zip code}
-
-\item{place}{Character string for the place (i.e., municipality/city)}
+\item{cols}{Numeric or character of length 4; names or indices of the columns
+containing relevant geocoding information. By default, interprets the
+first four columns as street, house number, zip code and municipality (in
+this order).}
 
 \item{epsg}{Character string for the requested CSR}
+
+\item{verbose}{Whether to print informative messages and progress bars during
+the geocoding process.}
 }
 \value{
 Returns a tidy simple features data frame of the original data object

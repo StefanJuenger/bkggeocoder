@@ -18,9 +18,9 @@ bkg_match_addresses <-
   data_edited$matched$whole_address <- paste0(
     data_edited_fixed_street,
     if (house_number %in% colnames(data_edited$matched)) {
-        paste0(" ", data_edited$matched[[house_number]])
-      }
-    ) %>%
+      paste0(" ", data_edited$matched[[house_number]])
+    }
+  ) %>%
     stringr::str_trim(.)
 
   # Prepare BKG data ----
@@ -33,7 +33,12 @@ bkg_match_addresses <-
   if (isTRUE(verbose)) {
     cli::cli_progress_bar(
       name = "Matching address data",
-      total = nrow(data_edited$matched)
+      total = nrow(data_edited$matched),
+      format = paste(
+        "{cli::pb_name} {cli::pb_bar} {cli::pb_current}/{cli::pb_total} addresses |",
+        "ETA {cli::pb_eta}"
+      ),
+      format_failed = "Failed at address {cli::pb_current}/{cli::pb_total}."
     )
   }
   

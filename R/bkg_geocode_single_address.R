@@ -9,6 +9,9 @@
 #' @param place Character string for the place (i.e., municipality/city)
 #' @param epsg Character string or numeric of an EPSG code describing the
 #' requested CRS
+#' @param max_features Numeric or character specifying the maximum amount of
+#' results to return. If \code{> 1}, returns matches in descending order by
+#' BKG score.
 #' @returns Object of class \code{sf} containing the geometries of the input
 #' address
 #'
@@ -29,66 +32,106 @@ bkg_geocode_single_address <- function (
   house_number,
   zip_code,
   place,
-  epsg = "3035"
+  epsg = "3035",
+  bbox = NULL,
+  max_features = 1
 ) {
-
   # Create POST body ----
-  POST_request_string <- paste0(
-    '<?xml version="1.0" encoding="UTF-8" ?>
-       <wfs:GetFeature version="1.1.0" service="WFS" maxFeatures="1"
-          xmlns:wfs="http://www.opengis.net/wfs"
-          xmlns:ogc="http://www.opengis.net/ogc"
-          xmlns:gdz="http://www.geodatenzentrum.de/ortsangabe"
-          xmlns:gml="http://www.opengis.net/gml"
-          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-       <wfs:Query typeName="gdz:Ortsangabe" srsName="EPSG:', epsg, '">
-       <ogc:Filter>
-          <ogc:And>
-            <ogc:PropertyIsLike escapeChar="\" wildCard="*" singleChar="?">
-              <ogc:PropertyName>strasse</ogc:PropertyName>
-              <ogc:Literal>', street, '</ogc:Literal>
-            </ogc:PropertyIsLike>
-            <ogc:PropertyIsLike escapeChar="\" wildCard="*" singleChar="?">
-              <ogc:PropertyName>haus</ogc:PropertyName>
-              <ogc:Literal>', house_number, '</ogc:Literal>
-            </ogc:PropertyIsLike>
-            <ogc:PropertyIsLike escapeChar="\" wildCard="*" singleChar="?">
-              <ogc:PropertyName>plz</ogc:PropertyName>
-              <ogc:Literal>', zip_code, '</ogc:Literal>
-            </ogc:PropertyIsLike>
-            <ogc:PropertyIsLike escapeChar="\" wildCard="*" singleChar="?">
-              <ogc:PropertyName>ort</ogc:PropertyName>
-              <ogc:Literal>', place, '</ogc:Literal>
-            </ogc:PropertyIsLike>
-          </ogc:And>
-        </ogc:Filter>
-      </wfs:Query>
-    </wfs:GetFeature>'
+  req_list <- list(
+    "wfs:GetFeature" = structure(
+      list(
+        "wfs:Query" = structure(
+          list(
+            "ogc:Filter" = list(
+              "ogc:And" = list(
+                "ogc:PropertyIsLike" = structure(
+                  list(
+                    "ogc:PropertyName" = list("strasse"),
+                    "ogc:Literal" = list(street)
+                  ),
+                  escapeChar = "\\",
+                  wildCard = "*",
+                  singleChar = "?"
+                ),
+                "ogc:PropertyIsLike" = structure(
+                  list(
+                    "ogc:PropertyName" = list("haus"),
+                    "ogc:Literal" = list(house_number)
+                  ),
+                  escapeChar = "\\",
+                  wildCard = "*",
+                  singleChar = "?"
+                ),
+                "ogc:PropertyIsLike" = structure(
+                  list(
+                    "ogc:PropertyName" = list("plz"),
+                    "ogc:Literal" = list(zip_code)
+                  ),
+                  escapeChar = "\\",
+                  wildCard = "*",
+                  singleChar = "?"
+                ),
+                "ogc:PropertyIsLike" = structure(
+                  list(
+                    "ogc:PropertyName" = list("ort"),
+                    "ogc:Literal" = list(place)
+                  ),
+                  escapeChar = "\\",
+                  wildCard = "*",
+                  singleChar = "?"
+                )
+              )
+            )
+          ),
+          typeName = "gdz:Ortsangabe",
+          srsName = paste0("EPSG:", epsg)
+        )
+      ),
+      version = "1.1.0",
+      service = "WFS",
+      maxFeatures = as.character(max_features),
+      "xmlns:wfs" = "http://www.opengis.net/wfs",
+      "xmlns:ogc" = "http://www.opengis.net/ogc",
+      "xmlns:gdz" = "http://www.geodatenzentrum.de/ortsangabe",
+      "xmlns:gml" = "http://www.opengis.net/gml",
+      "xmlns:xsi" = "http://www.w3.org/2001/XMLSchema-instance"
+    )
   )
+
+  post_req <- as.character(xml2::as_xml_document(req_list))
 
   # Read data ----
-  POST_request <- httr::POST(
-    'https://sg.geodatenzentrum.de/wfs_geokodierung_bund?outputformat=json',
-    body = POST_request_string
+  res <- httr::POST(
+    "https://sg.geodatenzentrum.de/wfs_geokodierung_bund?outputformat=json",
+    body = post_req
   )
+  
+  res_json <- httr::content(res, type = "application/json")
+  
+  if (!is.null(res_json$exceptionCode)) {
+    cli::cli_abort(c(
+      "The WFS server returned an exception:",
+      "x" = "{res_json$exceptionCode}: {res_json$exceptionText[[1]]}"
+    ))
+  }
 
-  POST_sf <- sf::read_sf(POST_request)
+  res_sf <- sf::read_sf(res)
 
   # Clean data ----
-  POST_sf <- dplyr::transmute(
-    POST_sf,
-    street_input = .data$street,
-    house_number_input = .data$house_number,
-    zip_code_input = .data$zip_code,
-    place_input = .data$place,
-    street_output = if("strasse" %in% colnames(.)) .data$strasse else NA,
-    house_number_output = if("haus" %in% colnames(.)) .data$haus else NA,
-    zip_code_output = if("plz" %in% colnames(.)) .data$plz else NA,
-    place_output = if("ort" %in% colnames(.)) .data$ort else NA,
-    AGS = if("ags" %in% colnames(.)) .data$ags else NA,
+  res_sf <- dplyr::transmute(
+    res_sf,
+    street_input = street,
+    house_number_input = house_number,
+    zip_code_input = zip_code,
+    place_input = place,
+    street_output = if("strasse" %in% colnames(res_sf)) .data$strasse else NA,
+    house_number_output = if("haus" %in% colnames(res_sf)) .data$haus else NA,
+    zip_code_output = if("plz" %in% colnames(res_sf)) .data$plz else NA,
+    place_output = if("ort" %in% colnames(res_sf)) .data$ort else NA,
+    AGS = if("ags" %in% colnames(res_sf)) .data$ags else NA,
     bkg_score = .data$score,
     coordinate_type = .data$typ
   )
 
-  POST_sf
+  res_sf
 }

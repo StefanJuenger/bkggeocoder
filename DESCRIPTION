@@ -24,5 +24,6 @@ Imports:
     rlang,
     httr,
     dplyr,
-    data.table
+    data.table,
+    xml2
 RoxygenNote: 7.1.2
