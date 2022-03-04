@@ -41,7 +41,7 @@ bkg_match_places <- function(
   places_file <- "zip_places/ga_zip_places.csv.encryptr.bin"
   
   if (isTRUE(data_from_server)) {
-    .crypt <- url(file.path("http://10.6.13.132:8000", places_file))
+    .crypt <- url(file.path("http://10.6.13.132:8000", places_file, fsep = "/"))
   } else {
     .crypt <- file.path(data_path, places_file)
   }

@@ -9,7 +9,6 @@ Description: R Package for geocoding based on the data of the Federal Agency of
     Cartography and Geodesy (BKG) in Germany.
 License: CC BY 4.0
 Encoding: UTF-8
-LazyData: true
 Imports: 
     glue,
     magrittr,

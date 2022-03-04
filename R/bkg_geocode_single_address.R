@@ -1,39 +1,35 @@
 #' Geocoding of a single address to a geo-coordinate
 #'
-#' @description Geocoding of a single address to a geo-coordinate through the
-#' BKG Geocoder WFS
-#'
 #' @param street Character string for the street name
 #' @param house_number Character string for the house number
 #' @param zip_code Character string for the zip code
 #' @param place Character string for the place (i.e., municipality/city)
-#' @param epsg Character string or numeric of an EPSG code describing the
-#' requested CRS
 #' @param max_features Numeric or character specifying the maximum amount of
 #' results to return. If \code{> 1}, returns matches in descending order by
 #' BKG score.
-#' @returns Object of class \code{sf} containing the geometries of the input
-#' address
 #'
 #' @examples
-#'
 #' \dontrun{
+#' # single address
 #' bkg_geocode_single_address(
 #'   street       = "Unter Sachsenhausen",
 #'   house_number = "6-8",
 #'   zip_code     = 50667,
 #'   place        = "Köln",
-#'   epsg         = "3035"
+#'   epsg         = 3035
 #' )
 #' }
+#' 
+#' @rdname bkg_geocode
+#' 
+#' @export
 
 bkg_geocode_single_address <- function (
   street,
   house_number,
   zip_code,
   place,
-  epsg = "3035",
-  bbox = NULL,
+  epsg = 3035,
   max_features = 1
 ) {
   # Create POST body ----

@@ -1,8 +1,10 @@
-#' Geocoding of a multiple addresses to a geo-coordinate
+#' BKG geocoding interface
 #'
-#' Geocoding of a multiple addresses to a geo-coordinate through the BKG Geocoder
+#' Geocoding of single or multiple addresses using the BKG geocoding WFS
+#' interface (\code{wfs_geokodierung_bund}).
 #'
-#' @param epsg Character string for the requested CSR
+#' @param epsg Numeric or character string containing an EPSG code for the
+#' requested CRS.
 #' @inheritParams bkg_geocode_offline
 #'
 #' @return Returns a tidy simple features data frame of the original data object
@@ -12,40 +14,22 @@
 #' @examples
 #'
 #' \dontrun{
-#' # single address
-#' bkg_geocode_single_address(
-#'   street       = "Unter Sachsenhausen",
-#'   house_number = "6-8",
-#'   zip_code     = 50667,
-#'   place        = "Köln",
-#'   epsg         = "3035"
+#' # dataset with addresses
+#' address_data <- tibble::tribble(
+#'  ~street, ~house_number, ~zip_code, ~place,
+#'  "B2", "1", "68159", "Mannheim",
+#'  "Unter Sachsenhausen", "6-8", "50667", "Köln"
 #' )
 #'
-#' # dataset with addresses
-#' address_data <-
-#'   tibble::tribble(
-#'     ~street, ~house_number, ~zip_code, ~place,
-#'     "B2", "1", "68159", "Mannheim",
-#'     "Unter Sachsenhausen", "6-8", "50667", "Köln"
-#'   )
-#'
-#' address_data_geocoded <-
-#'   bkg_geocode(
-#'     data         = address_data,
-#'     street       = "street",
-#'     house_number = "house_number",
-#'     zip_code     = "zip_code",
-#'     place        = "place",
-#'     epsg         = "3035"
-#'   )
+#' bkg_geocode(data = address_data, epsg  = 4326)
 #' }
 #'
 #' @export
 
 bkg_geocode <- function (
-  data = NULL,
+  data,
   cols = 1L:4L,
-  epsg = "3035",
+  epsg = 3035,
   verbose = TRUE
 ) {
   cols <- names(data[cols])
