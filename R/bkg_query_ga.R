@@ -4,8 +4,22 @@
 #'
 #' @noRd
 
-bkg_query_ga <-
-  function(places, data_from_server, data_path, credentials_path, verbose) {
+bkg_query_ga <- function(
+  places,
+  data_from_server,
+  data_path,
+  credentials_path,
+  verbose
+) {
+  cache_file <- file.path(tempdir(), "bkg_data_cache.RData")
+  if (file.exists(cache_file)) {
+    load(cache_file)
+    cached_places <- names(cached_ga)
+  } else {
+    cached_places <- NULL
+    cached_ga <- NULL
+  }
+  
   if (isTRUE(verbose)) {
     cli::cli_h2("Preparing database")
     cli::cli_progress_bar(
@@ -24,49 +38,54 @@ bkg_query_ga <-
       if (isTRUE(verbose)) {
         cli::cli_progress_update(.envir = parent.frame(2))
       }
+    
+      if (place %in% names(cached_ga)) {
+        return(cached_ga[[place]])
+      }
       
       dataset_name <- gsub("/", "_", place)
 
       if(isTRUE(data_from_server)) {
-        .crypt <- paste0(
+        .crypt_url <- paste0(
           "http://10.6.13.132:8000/ga/",
-          dataset_name,
+          utils::URLencode(dataset_name),
           ".csv.encryptr.bin"
-        ) %>%
-          utils::URLencode() %>%
-          url() %>%
-          readRDS()
+        )
+        .crypt <- readRDS(url(.crypt_url))
       } else {
-        .crypt <- paste0(
-          data_path,
-          "/ga/",
-          dataset_name,
-          ".csv.encryptr.bin"
-        ) %>%
-          readRDS()
+        .crypt_path <- paste0(data_path, "/ga/", dataset_name, ".csv.encryptr.bin")
+        .crypt <- readRDS(.crypt_path)
       }
 
       tmp_out_file <- tempfile(pattern = "tmp_out_file", fileext = ".csv")
 
-      openssl::decrypt_envelope(
+      .decrypt <- openssl::decrypt_envelope(
         .crypt$data, .crypt$iv,
         .crypt$session,
         key = paste0(credentials_path, "/id_rsa"),
         password = readLines(paste0(credentials_path, "/pwd"))
-      ) %>%
-        writeBin(tmp_out_file)
+      )
+      
+      writeBin(.decrypt, con = tmp_out_file)
 
       i_data <- data.table::fread(
         tmp_out_file,
         colClasses = 'character',
         encoding = "UTF-8"
       )
+      
+      closeAllConnections()
 
       unlink(tmp_out_file)
 
       i_data
     })
 
+  names(queried_ga) <- places
+  cached_ga <- queried_ga
+  
+  save(cached_ga, file = cache_file)
+  
   # Clean data ----
   queried_ga <- data.table::rbindlist(queried_ga)
 
@@ -79,11 +98,15 @@ bkg_query_ga <-
   queried_ga[, y := gsub(",", ".", y)]
   
   if (isTRUE(verbose)) {
-    cli::cli_alert_info(paste(
+    cli::cli_alert_success(paste(
+      "{.val {sum(places %in% cached_places)}} places were recovered from the",
+      "cache."
+    ))
+    cli::cli_alert_success(paste(
       "Read in {.val {nrow(queried_ga)}} address{?es} within",
       "{.val {length(unique(queried_ga$place))}} municipalit{?y/ies}."
     ))
   }
-  
+
   queried_ga
 }
