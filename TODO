@@ -1,0 +1,7 @@
+TODO (sorted by relevance):
+- Reduce imports (dplyr, magrittr, glue, readr, stringr, openxlsx)
+- Implement a more flexible way to control string distance methods
+- Experiment with different string distance metrics
+- Properly implement BKG data caching
+- Write vignette
+- Include test data (OSM)?
