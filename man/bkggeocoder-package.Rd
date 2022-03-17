@@ -7,10 +7,23 @@
 \alias{bkggeocoder-package}
 \title{bkggeocoder: R Package for geocoding based on the data of the Federal Agency of Cartography and Geodesy (BKG) in Germany}
 \description{
-R Package for geocoding based on the data of the Federal Agency of Cartography and Geodesy (BKG) in Germany.
+R Package for geocoding based on the data of the Federal Agency of Cartography and Geodesy (BKG) in Germany. The functions of this package require access to the BKG address datasets (gdz_geokodierung_* or wfs_geokodierung_*).
+}
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/StefanJuenger/bkggeocoder}
+  \item Report bugs at \url{https://github.com/StefanJuenger/bkggeocoder/issues}
+}
+
 }
 \author{
 \strong{Maintainer}: Stefan Jünger \email{stefan.juenger@gesis.org}
+
+Authors:
+\itemize{
+  \item Jonas Lieth \email{jonas.lieth@gesis.org}
+}
 
 }
 \keyword{internal}

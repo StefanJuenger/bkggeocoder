@@ -7,7 +7,7 @@
 \method{plot}{GeocodingResults}(x, ...)
 }
 \arguments{
-\item{x}{R object of class 'GeocodingResults'}
+\item{x}{Object of class \code{GeocodingResults}}
 
 \item{...}{Further arguments passed on to \code{\link[graphics]{hist}}}
 }

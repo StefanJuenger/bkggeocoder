@@ -1,35 +1,31 @@
-bkg_match_addresses <-
-  function(
-    data_edited,
-    cols,
-    house_coordinates,
-    target_quality,
-    verbose
-  ) {
+bkg_match_addresses <- function(
+  data_edited,
+  cols,
+  house_coordinates,
+  target_quality,
+  opts,
+  verbose
+) {
   street <- cols[1]
   house_number <- cols[2]
   zip_code <- cols[3]
   place <- cols[4]
 
   # Prepare data ----
-  data_edited_fixed_street <- data_edited$matched[[street]] %>%
-    gsub("Str[.]", "Stra\u00dfe", .) %>%
-    gsub("str[.]", "stra\u00dfe", .)
-  data_edited$matched$whole_address <- paste0(
+  data_edited_fixed_street <- gsub("tr[.]", "tra\u00dfe", data_edited$matched[[street]])
+  data_edited$matched$whole_address <- trimws(paste0(
     data_edited_fixed_street,
     if (house_number %in% colnames(data_edited$matched)) {
       paste0(" ", data_edited$matched[[house_number]])
     }
-  ) %>%
-    stringr::str_trim(.)
+  ))
 
   # Prepare BKG data ----
-  house_coordinates$whole_address <- paste0(
+  house_coordinates$whole_address <- trimws(paste0(
     house_coordinates$street, " ", house_coordinates$house_number,
     house_coordinates$house_number_add
-  ) %>%
-    stringr::str_trim()
-
+  ))
+  
   if (isTRUE(verbose)) {
     cli::cli_progress_bar(
       name = "Matching address data",
@@ -42,37 +38,37 @@ bkg_match_addresses <-
     )
   }
   
-  fuzzy_joined_data <- list()
-
+  joined_data <- list()
+  
   # Match data with BKG data (record linkage) ----
   for (i in 1:nrow(data_edited$matched)) {
-
+    
     if (isTRUE(verbose)) {
       cli::cli_progress_update()
     }
-    
+
     # Create a pairs object with matching places and zip codes
     data_edited_pairs <- reclin2::pair(
       x = data_edited$matched[i, ],
       y = house_coordinates[
         place == data_edited$matched[i,]$place_matched &
-        zip_code == data_edited$matched[i,]$zip_code_matched
+          zip_code == data_edited$matched[i,]$zip_code_matched
       ]
     )
     
     # Compute Jaro-Winkler scores of the pairs
-    data_edited_pairs <- reclin2::compare_pairs(
+    data_edited_compare <- reclin2::compare_pairs(
       data_edited_pairs,
       on = "whole_address",
       default_comparator = reclin2::jaro_winkler(target_quality),
       inplace = TRUE
     )
     
-    weight_i <- max(data_edited_pairs$whole_address)
+    weight_i <- max(data_edited_compare$whole_address)
     
     # Select data below threshold using a greedy selection algorithm
     selection <- reclin2::select_greedy(
-      data_edited_pairs,
+      data_edited_compare,
       variable = "threshold",
       score = "whole_address",
       threshold = target_quality
@@ -80,36 +76,40 @@ bkg_match_addresses <-
     selection <- selection[selection$threshold]
     
     # Link results with original data
-    fuzzy_joined_data[[i]] <- reclin2::link(
+    joined_data[[i]] <- reclin2::link(
       selection,
       all_x = TRUE,
       all_y = FALSE
-    ) %>%
-      dplyr::bind_cols(score = weight_i)
+    )
+    
+    joined_data[[i]] <- cbind(joined_data[[i]], score = weight_i)
   }
   
   if (isTRUE(verbose)) {
     cli::cli_progress_done()
   }
-
-  fuzzy_joined_data <- do.call(rbind, fuzzy_joined_data)
+  
+  joined_data <- do.call(rbind, joined_data)
 
   # Fix scores ----
   regex_chr <- "[0-9]+[a-z]*"
-  fuzzy_joined_data <- dplyr::mutate(
-    fuzzy_joined_data,
-    score = ifelse(
-      stringr::str_extract(.data$whole_address.x, regex_chr) ==
-      stringr::str_extract(.data$whole_address.y, regex_chr),
-      yes = .data$score,
-      no = .data$score - .05
-    )
+  hn.x <- unlist(regmatches(
+    joined_data$whole_address.x,
+    regexec(regex_chr, joined_data$whole_address.x)
+  ))
+  hn.y <- regmatches(
+    joined_data$whole_address.x,
+    regexec(regex_chr, joined_data$whole_address.y)
   )
+  hn.y <- sapply(hn.y, function(x) if (!length(x)) NA else x)
+  hn_mismatch <- !hn.x == hn.y & !is.na(hn.x) & !is.na(hn.y)
+  incorrect_scores <- joined_data$score[hn_mismatch]
+  joined_data$score[hn_mismatch] <- incorrect_scores - 0.05
   
-  geocoded <- dplyr::filter(fuzzy_joined_data, !is.na(.data$RS))
+  geocoded <- joined_data[!is.na(joined_data$RS), ]
   
   if (isTRUE(verbose)) {
-    if (!nrow(fuzzy_joined_data)) {
+    if (!nrow(joined_data)) {
       cli::cli_abort("No address could be geocoded. Check your input!")
     } else if (nrow(geocoded) == nrow(data_edited$matched)) {
       cli::cli_alert_success("All place-matched addresses could be geocoded.")
@@ -121,5 +121,5 @@ bkg_match_addresses <-
     }
   }
   
-  fuzzy_joined_data
+  joined_data
 }

@@ -1,61 +1,72 @@
-bkg_clean_matched_addresses <-
-  function(
-    fuzzy_joined_data,
-    cols,
-    verbose
-  ) {
-    zip_code <- cols[3]
-    place <- cols[4]
-    
-    if (isTRUE(verbose)) {
-      cli::cli_progress_step(
-        msg = "Cleaning up geocoding output...",
-        msg_done = "Cleaned up geocoding output.",
-        msg_failed = "Failed to clean up geocoding output."
-      )
-    }
-    
-    fuzzy_joined_data <- fuzzy_joined_data %>%
-      dplyr::rename_at(
-        dplyr::vars(dplyr::contains(".x")),
-        ~stringr::str_replace(., ".x", "_input")
-      ) %>%
-      dplyr::rename_at(
-        dplyr::vars(dplyr::contains(".y")),
-        ~stringr::str_replace(., ".y", "_output")
-      )
-
-    # Set missing coordinates to zero to be compliant with sf
-    fuzzy_joined_data$x[is.na(fuzzy_joined_data$x)] <- 0
-    fuzzy_joined_data$y[is.na(fuzzy_joined_data$y)] <- 0
-
-    # clean dataset
-    fuzzy_joined_data <- fuzzy_joined_data %>%
-      sf::st_as_sf(coords = c("x", "y"), crs = 25832) %>%
-      dplyr::mutate(
-        address_input = paste(.data$whole_address_input,
-                              .data$zip_code_input,
-                              .data$place_input),
-        address_output = .data$whole_address_add,
-        GEM = stringr::str_sub(.data$RS, 1, 9),
-        KRS = stringr::str_sub(.data$RS, 1, 5),
-        RBZ = stringr::str_sub(.data$RS, 1, 3),
-        STA = stringr::str_sub(.data$RS, 1, 2),
-        Gitter_ID_1km = spt_create_inspire_ids(data = ., type = "1km"),
-        Gitter_ID_100m = spt_create_inspire_ids(data = ., type = "100m"),
-        source = "\u00a9 GeoBasis-DE / BKG, Deutsche Post Direkt GmbH, Statistisches Bundesamt, Wiesbaden (2021)"
-      ) %>%
-      tibble::as_tibble() %>%
-      dplyr::select(
-        .data$id, .data$score, .data$address_input, .data$address_output,
-        .data$RS, .data$GEM, .data$KRS, .data$RBZ, .data$STA,
-        dplyr::contains("Gitter"), .data$geometry
-      ) %>%
-      sf::st_as_sf()
-
-    if (isTRUE(verbose)) {
-      cli::cli_progress_done()
-    }
-    
-    fuzzy_joined_data
+bkg_clean_matched_addresses <- function(
+  messy_data,
+  cols,
+  verbose
+) {
+  zip_code <- cols[3]
+  place <- cols[4]
+  
+  if (isTRUE(verbose)) {
+    cli::cli_progress_step(
+      msg = "Cleaning up geocoding output...",
+      msg_done = "Cleaned up geocoding output.",
+      msg_failed = "Failed to clean up geocoding output."
+    )
   }
+  
+  is_out <- grepl(".y", names(messy_data), fixed = TRUE)
+  is_inp <- grepl(".x", names(messy_data), fixed = TRUE)
+  new_out <- gsub(".y", "_output", names(messy_data)[is_out], fixed = TRUE)
+  new_in <- gsub(".x", "_input", names(messy_data)[is_inp], fixed = TRUE)
+  names(messy_data)[is_out] <- new_out
+  names(messy_data)[is_inp] <- new_in
+
+  # clean dataset
+  not_so_messy_data <- tibble::tibble(
+    id = messy_data$id,
+    score = messy_data$score,
+    address_input = paste(
+      messy_data$whole_address_input,
+      messy_data$zip_code_input,
+      messy_data$place_input
+    ),
+    street_input = messy_data$street_input,
+    house_number_input = messy_data$house_number_input,
+    zip_code_input = messy_data$zip_code_input,
+    place_input = messy_data$place_input,
+    address_output = messy_data$whole_address_add,
+    street_output = messy_data$street_output,
+    house_number_output = messy_data$house_number_output,
+    zip_code_output = messy_data$zip_code_output,
+    place_output = messy_data$place_output,
+    RS  = messy_data$RS,
+    GEM = substr(messy_data$RS, 1, 9),
+    KRS = substr(messy_data$RS, 1, 5),
+    RBZ = substr(messy_data$RS, 1, 3),
+    STA = substr(messy_data$RS, 1, 2),
+    x = messy_data$x,
+    y = messy_data$y,
+    source = "\u00a9 GeoBasis-DE / BKG, Deutsche Post Direkt GmbH, Statistisches Bundesamt, Wiesbaden (2021)"
+  )
+  
+  not_so_messy_data_sf <- sf::st_as_sf(
+    not_so_messy_data,
+    coords = c("x", "y"),
+    crs = 25832,
+    remove = TRUE,
+    na.fail = FALSE
+  )
+  
+  clean_data <- tibble::add_column(
+    not_so_messy_data_sf,
+    Gitter_ID_1km = spt_create_inspire_ids(data = not_so_messy_data_sf, type = "1km"),
+    Gitter_ID_100m = spt_create_inspire_ids(data = not_so_messy_data_sf, type = "100m"),
+    .before = 18
+  )
+
+  if (isTRUE(verbose)) {
+    cli::cli_progress_done()
+  }
+  
+  clean_data
+}

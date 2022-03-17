@@ -2,27 +2,36 @@
 % Please edit documentation in R/bkg_export_geocodes.R
 \name{bkg_export_geocodes}
 \alias{bkg_export_geocodes}
-\title{Exporting the results of the geocoding}
+\title{Export geocoding results}
 \usage{
 bkg_export_geocodes(
   data,
   which = c("all", "successful", "na", "unmatched_places"),
   file,
-  overwrite = TRUE
+  overwrite = TRUE,
+  ...
 )
 }
 \arguments{
 \item{data}{R object of class GeocodingResults; the geocoded addresses}
 
-\item{which}{character string; what kind of results would you like to export
+\item{which}{Character string; what kind of results would you like to export
 (default is the successful and na ones appended together)}
 
-\item{file}{character string; the file path resp. name either with an .csv or
-.xlsx extension}
+\item{file}{Path to the output file. The file type is guessed by
+\code{\link[sf]{st_write}} and must be supported by
+\code{\link[sf]{st_drivers}}.}
 
-\item{overwrite}{logical; define whether exported file get overwritten
+\item{overwrite}{Logical; define whether exported file get overwritten
 (default is true)}
+
+\item{...}{Further arguments passed to \code{\link[utils]{write.csv}} or
+\code{\link[sf]{st_write}}.}
+}
+\value{
+\code{file}, invisibly.
 }
 \description{
-Exporting the results of the geocoding for further checking
+Export the output of \code{\link[bkggeocoder]{bkg_geocode_offline}} and
+\code{\link[bkggeocoder]{bkg_geocode}}.
 }

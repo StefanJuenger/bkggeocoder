@@ -1,14 +1,20 @@
-#' Exporting the results of the geocoding
+#' Export geocoding results
 #'
-#' Exporting the results of the geocoding for further checking
+#' Export the output of \code{\link[bkggeocoder]{bkg_geocode_offline}} and
+#' \code{\link[bkggeocoder]{bkg_geocode}}.
 #'
 #' @param data R object of class GeocodingResults; the geocoded addresses
-#' @param which character string; what kind of results would you like to export
+#' @param which Character string; what kind of results would you like to export
 #' (default is the successful and na ones appended together)
-#' @param file character string; the file path resp. name either with an .csv or
-#' .xlsx extension
-#' @param overwrite logical; define whether exported file get overwritten
+#' @param file Path to the output file. The file type is guessed by
+#' \code{\link[sf]{st_write}} and must be supported by
+#' \code{\link[sf]{st_drivers}}.
+#' @param overwrite Logical; define whether exported file get overwritten
 #' (default is true)
+#' @param ... Further arguments passed to \code{\link[utils]{write.csv}} or
+#' \code{\link[sf]{st_write}}.
+#' 
+#' @returns \code{file}, invisibly.
 #'
 #' @export
 
@@ -16,7 +22,8 @@ bkg_export_geocodes <- function(
   data,
   which = c("all", "successful", "na", "unmatched_places"),
   file,
-  overwrite = TRUE
+  overwrite = TRUE,
+  ...
   ) {
   which <- match.arg(which)
 
@@ -27,31 +34,26 @@ bkg_export_geocodes <- function(
     )
   }
 
-  export_function <- function (x, file) {
-    if (stringr::str_detect(file, ".csv")) {
-      if (!file.exists(file) || isTRUE(overwrite)) {
-        readr::write_csv(x, file)
-      }
-    } else if (stringr::str_detect(file, ".xlsx")) {
-      openxlsx::write.xlsx(x, file, overwrite = isTRUE(overwrite))
+  data_to_export <- if (which == "all") {
+    do.call(rbind, list(data$geocoded, data$not_geocoded))
+  } else if (which == "successful") {
+    data$geocoded
+  } else if (which == "na") {
+    data$geocoded_data_na
+  } else if (which == "unmatched_places") {
+    data$unmatched_places
+  }
+  
+  if (!file.exists(file) || isTRUE(overwrite)) {
+    if (grepl(".csv", file, fixed = TRUE)) {
+      coords <- sf::st_coordinates(data_to_export)
+      data_to_export <- cbind.data.frame(coords, data_to_export)
+      data_to_export$geometry <- NULL
+      write.table(data_to_export, file, ...)
+    } else {
+      sf::st_write(data_to_export, file, ...)
     }
   }
-
-  data_to_export <- if (which == "all") {
-    dplyr::bind_rows(
-      dplyr::select(data$geocoded_data, -.data$geometry),
-      dplyr::select(data$geocoded_data_na, -.data$geometry)
-    ) %>%
-      dplyr::select(-.data$geometry)
-    } else if (which == "successful") {
-       dplyr::select(data$geocoded_data, -.data$geometry)
-    } else if (which == "na") {
-      dplyr::select(data$geocoded_data_na, -.data$geometry)
-    } else if (which == "unmatched_places") {
-      data$unmatched_places
-    }
-
-  export_function(data_to_export, file)
   
-  invisible()
+  invisible(file)
 }

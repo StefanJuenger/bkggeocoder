@@ -114,20 +114,42 @@ bkg_geocode_single_address <- function (
   res_sf <- sf::read_sf(res)
 
   # Clean data ----
-  res_sf <- dplyr::transmute(
-    res_sf,
+  res_sf <- tibble::tibble(
+    score = res_sf$score,
+    quality = if ("qualitaet" %in% res_sf) res_sf$qualitaet else NA,
+    quality_class = if ("qkz" %in% res_sf) res_sf$qkz else NA,
+    address_input = trimws(paste(street, house_number, zip_code, place)),
+    address_output = trimws(paste(
+      if("strasse" %in% colnames(res_sf)) res_sf$strasse else NULL,
+      if("haus" %in% colnames(res_sf)) res_sf$haus else NULL,
+      if("plz" %in% colnames(res_sf)) res_sf$plz else NULL,
+      if("ort" %in% colnames(res_sf)) res_sf$ort else NULL
+    )),
+    RS  = if("rs" %in% colnames(res_sf)) res_sf$rs else NA,
+    GEM = if("rs" %in% colnames(res_sf)) substr(res_sf$rs, 1, 9) else NA,
+    KRS = if("rs" %in% colnames(res_sf)) substr(res_sf$rs, 1, 5) else NA,
+    RBZ = if("rs" %in% colnames(res_sf)) substr(res_sf$rs, 1, 3) else NA,
+    STA = if("rs" %in% colnames(res_sf)) substr(res_sf$rs, 1, 2) else NA,
+    AGS = if("ags" %in% colnames(res_sf)) res_sf$ags else NA,
     street_input = street,
     house_number_input = house_number,
     zip_code_input = zip_code,
     place_input = place,
-    street_output = if("strasse" %in% colnames(res_sf)) .data$strasse else NA,
-    house_number_output = if("haus" %in% colnames(res_sf)) .data$haus else NA,
-    zip_code_output = if("plz" %in% colnames(res_sf)) .data$plz else NA,
-    place_output = if("ort" %in% colnames(res_sf)) .data$ort else NA,
-    AGS = if("ags" %in% colnames(res_sf)) .data$ags else NA,
-    bkg_score = .data$score,
-    coordinate_type = .data$typ
+    street_output = if("strasse" %in% colnames(res_sf)) res_sf$strasse else NA,
+    house_number_output = if("haus" %in% colnames(res_sf)) res_sf$haus else NA,
+    zip_code_output = if("plz" %in% colnames(res_sf)) res_sf$plz else NA,
+    place_output = if("ort" %in% colnames(res_sf)) res_sf$ort else NA,
+    municipality = if ("gemeinde" %in% colnames(res_sf)) res_sf$gemeinde else NA,
+    verwaltungsgemeinschaft = if ("verwgem" %in% colnames(res_sf)) res_sf$verwgem else NA,
+    district = if ("kreis" %in% colnames(res_sf)) res_sf$kreis else NA,
+    governmental_district = if ("regbezirk" %in% colnames(res_sf)) res_sf$regbezirk else NA,
+    state = if ("bundesland" %in% colnames(res_sf)) res_sf$bundesland else NA,
+    coordinate_type = res_sf$typ,
+    GITTER_ID_100m = spt_create_inspire_ids(res_sf, type = "100m"),
+    GITTER_ID_1km = spt_create_inspire_ids(res_sf, type = "1km"),
+    source = "\u00a9 GeoBasis-DE / BKG, Deutsche Post Direkt GmbH, Statistisches Bundesamt, Wiesbaden (2021)",
+    geometry = res_sf$geometry
   )
 
-  res_sf
+  res_sf <- sf::st_as_sf(res_sf)
 }

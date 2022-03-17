@@ -5,7 +5,13 @@
 \alias{bkg_geocode_single_address}
 \title{BKG geocoding interface}
 \usage{
-bkg_geocode(data = NULL, cols = 1L:4L, epsg = 3035, verbose = TRUE)
+bkg_geocode(
+  data,
+  cols = 1L:4L,
+  epsg = 3035,
+  target_quality = 0.9,
+  verbose = TRUE
+)
 
 bkg_geocode_single_address(
   street,
@@ -29,6 +35,10 @@ this order).}
 
 \item{epsg}{Numeric or character string containing an EPSG code for the
 requested CRS.}
+
+\item{target_quality}{Numeric; targeted quality of second record linkage
+round (see details). Corresponds to the threshold value of
+\code{\link[reclin2]{jaro_winkler}} and \code{\link[reclin2]{select_greedy}}.}
 
 \item{verbose}{Whether to print informative messages and progress bars during
 the geocoding process.}

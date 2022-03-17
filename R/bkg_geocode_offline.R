@@ -30,6 +30,9 @@
 #' \code{\link[reclin2]{jaro_winkler}} and \code{\link[reclin2]{select_greedy}}.
 #' @param verbose Whether to print informative messages and progress bars during
 #' the geocoding process.
+#' @param force_decrypt Whether to force the function to read in the encrypted
+#' files. This can be useful, if the BKG data should not be stored locally for
+#' too long or if the cached data are corrupt or outdated.
 #'
 #' @returns Returns a nested list of class GeocodingResult containing an
 #' \code{sf} dataframe of the geocoding results (\code{$geocoded_data}) as well
@@ -49,15 +52,37 @@
 #' record linkage). Again, you can play with the quality by adjusting
 #' the \code{target_quality} parameter.
 #' 
+#' Record linkage is employed using string distance metrics from
+#' \code{\link[stringdist]{stringdist}}. By default, scores for both place
+#' matching and geocoding are calculated using the standard Jaro distance. This
+#' metric can be adjusted by passing a list of options that is then passed on
+#' to \code{\link[stringdist]{stringdist}}. This can include the method of
+#' choice \code{method} as well as further method-specific parameters like
+#' the size of the q-gram (\code{q}), the Jaro-Winkler prefix factor (\code{p}),
+#' and the Winkler boost threshold (\code{bt}). To derive a distance index that
+#' falls between 0 and 1, where 0 denotes a complete dissimilarity between both
+#' address strings and 1 denotes a complete similarity, certain edit and q-gram
+#' distance metrics are devided by their maximum possible value as explained in
+#' van der Loo (2014).
+#' For more details on the method
+#' choice, refer to the \code{\link[stringdist]{stringdist-metrics}}
+#' documentation from the \code{stringdist} package.
+#' 
 #' The overall quality of the geocoding can be evaluated by looking at the
 #' values of the column \code{score} (ranging from 0 to 1), which is based on
 #' the second round of record linkage. In general, for both rounds of record
 #' linkage, a score of above 0.9 can be considered a good match. If the score
-#' falls below 0.6, the result should be thoroughly scrutinized.
+#' falls below 0.8, the result should be thoroughly scrutinized.
 #'
-#' @importFrom magrittr %>%
-#' @importFrom dplyr .data
-#' @import data.table
+#' Address data loading works using a temporary cache. Before trying to request
+#' and decrypt encrypted data chunks, the function will look for a file named
+#' \code{bkg_data_cache.rda} in \code{tempdir()}. If found, data decrypting will
+#' be skipped which can shorten the processing time significantly for large
+#' input datasets with a high number of different places. If needed, this
+#' behavior can be suppressed by setting \code{force_decrypt = TRUE}.
+#' 
+#' @references van der Loo, M. P. J. (2014). The stringdist Package for
+#' Approximate String Matching. The R Journal, 6(1), 111–122. https://doi.org/10.32614/RJ-2014-011
 #' 
 #' @encoding UTF-8
 #'
@@ -72,8 +97,11 @@ bkg_geocode_offline <- function(
   join_with_original = TRUE,
   crs = 3035L,
   place_match_quality = 0.9,
+  place_match_opts = list(),
   target_quality = 0.9,
-  verbose = TRUE
+  target_opts = list(),
+  verbose = TRUE,
+  force_decrypt = FALSE
 ) {
   stopifnot(is.data.frame(data))
   stopifnot(is.logical(data_from_server))
@@ -113,6 +141,7 @@ bkg_geocode_offline <- function(
     data_path,
     credentials_path,
     place_match_quality,
+    place_match_opts,
     verbose
   )
 
@@ -122,7 +151,8 @@ bkg_geocode_offline <- function(
     data_from_server,
     data_path,
     credentials_path,
-    verbose
+    verbose,
+    force_decrypt
   )
 
   data.table::setkeyv(house_coordinates, c("zip_code", "place"))
@@ -132,49 +162,63 @@ bkg_geocode_offline <- function(
     cli::cli_h2("Geocoding input data")
   }
 
-  fuzzy_joined_data <- bkg_match_addresses(
+  messy_geocoded_data <- bkg_match_addresses(
     data_edited,
     cols,
     house_coordinates,
     target_quality,
+    target_opts,
     verbose
   )
 
   # Data Cleaning ----
-  fuzzy_joined_data <- bkg_clean_matched_addresses(
-    fuzzy_joined_data,
+  cleaned_data <- bkg_clean_matched_addresses(
+    messy_geocoded_data,
     cols,
     verbose
   )
 
   if (isTRUE(join_with_original)) {
-    fuzzy_joined_data <- dplyr::left_join(data, fuzzy_joined_data, by = "id") %>%
-      sf::st_as_sf()
+    cleaned_data <- merge(
+      data,
+      cleaned_data,
+      by = "id",
+      all.x = TRUE,
+      sort = TRUE
+    )
+    
+    # Remove all '_input' variables since they are already in the original to be
+    # merged with
+    cleaned_data <- sf::st_as_sf(tibble::as_tibble(cleaned_data))
+    cleaned_data <- cleaned_data[!names(cleaned_data) %in% c(
+      "id",
+      "street_input",
+      "house_number_input",
+      "zip_code_input",
+      "place_input"
+    )]
   }
   
+  # Remove internal id
+  cleaned_data$id <- NULL
+  
   if (!missing(crs)) {
-    fuzzy_joined_data <- sf::st_transform(fuzzy_joined_data, crs = crs)
+    cleaned_data <- sf::st_transform(cleaned_data, crs = crs)
   }
 
   # Create Output ----
-  geocoded_data    <- dplyr::filter(fuzzy_joined_data, !is.na(.data$RS))
-  geocoded_data_na <- dplyr::filter(fuzzy_joined_data, is.na(.data$RS))
+  geocoded_data    <- cleaned_data[!is.na(cleaned_data$RS), ]
+  geocoded_data_na <- cleaned_data[is.na(cleaned_data$RS), ]
 
-  output_list <- list(
-    geocoded_data = geocoded_data,
-    geocoded_data_na = geocoded_data_na,
-    non_geocoded_data = data_edited$data_unmatched,
-    unmatched_places = data_edited$unmatched_places,
-    summary_statistics = tibble::tibble(
-      n_input = nrow(data),
-      n_entering = nrow(data_edited$matched),
-      n_geocoded = nrow(geocoded_data),
-      n_geocoded_error = nrow(geocoded_data_na),
-      mean_score = mean(geocoded_data$score, na.rm = TRUE),
-      sd_score = stats::sd(geocoded_data$score, na.rm = TRUE),
-      min_score = min(geocoded_data$score, na.rm = TRUE)
+  output_list <- structure(
+    list(
+      geocoded = geocoded_data,
+      not_geocoded = geocoded_data_na,
+      not_place_matched = data_edited$data_unmatched,
+      unmatched_places = data_edited$unmatched_places,
+      call = match.call()
     ),
-    call = match.call()
+    type = "offline"
   )
 
   class(output_list) <- c("GeocodingResults", class(output_list))

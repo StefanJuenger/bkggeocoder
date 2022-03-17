@@ -7,7 +7,7 @@
 \method{summary}{GeocodingResults}(object, ...)
 }
 \arguments{
-\item{object}{R object of class 'GeocodingResults'}
+\item{object}{Object of class \code{GeocodingResults}}
 
 \item{...}{Ignored.}
 }

@@ -14,8 +14,11 @@ bkg_geocode_offline(
   join_with_original = TRUE,
   crs = 3035L,
   place_match_quality = 0.9,
+  place_match_opts = list(),
   target_quality = 0.9,
-  verbose = TRUE
+  target_opts = list(),
+  verbose = TRUE,
+  force_decrypt = FALSE
 )
 }
 \arguments{
@@ -55,6 +58,10 @@ round (see details). Corresponds to the threshold value of
 
 \item{verbose}{Whether to print informative messages and progress bars during
 the geocoding process.}
+
+\item{force_decrypt}{Whether to force the function to read in the encrypted
+files. This can be useful, if the BKG data should not be stored locally for
+too long or if the cached data are corrupt or outdated.}
 }
 \value{
 Returns a nested list of class GeocodingResult containing an
@@ -80,9 +87,36 @@ against the addresses in the address/geocoordinate database (second round of
 record linkage). Again, you can play with the quality by adjusting
 the \code{target_quality} parameter.
 
+Record linkage is employed using string distance metrics from
+\code{\link[stringdist]{stringdist}}. By default, scores for both place
+matching and geocoding are calculated using the standard Jaro distance. This
+metric can be adjusted by passing a list of options that is then passed on
+to \code{\link[stringdist]{stringdist}}. This can include the method of
+choice \code{method} as well as further method-specific parameters like
+the size of the q-gram (\code{q}), the Jaro-Winkler prefix factor (\code{p}),
+and the Winkler boost threshold (\code{bt}). To derive a distance index that
+falls between 0 and 1, where 0 denotes a complete dissimilarity between both
+address strings and 1 denotes a complete similarity, certain edit and q-gram
+distance metrics are devided by their maximum possible value as explained in
+van der Loo (2014).
+For more details on the method
+choice, refer to the \code{\link[stringdist]{stringdist-metrics}}
+documentation from the \code{stringdist} package.
+
 The overall quality of the geocoding can be evaluated by looking at the
 values of the column \code{score} (ranging from 0 to 1), which is based on
 the second round of record linkage. In general, for both rounds of record
 linkage, a score of above 0.9 can be considered a good match. If the score
-falls below 0.6, the result should be thoroughly scrutinized.
+falls below 0.8, the result should be thoroughly scrutinized.
+
+Address data loading works using a temporary cache. Before trying to request
+and decrypt encrypted data chunks, the function will look for a file named
+\code{bkg_data_cache.rda} in \code{tempdir()}. If found, data decrypting will
+be skipped which can shorten the processing time significantly for large
+input datasets with a high number of different places. If needed, this
+behavior can be suppressed by setting \code{force_decrypt = TRUE}.
+}
+\references{
+van der Loo, M. P. J. (2014). The stringdist Package for
+Approximate String Matching. The R Journal, 6(1), 111–122. https://doi.org/10.32614/RJ-2014-011
 }

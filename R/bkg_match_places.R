@@ -12,31 +12,25 @@ bkg_match_places <- function(
   data_path,
   credentials_path,
   place_match_quality,
+  opts,
   verbose
 ) {
   place <- cols[4]
   zip_code <- cols[3]
 
   # Prepare place data ----
-  data_municipalities <- dplyr::select(
-    data,
-    place := !!place,
-    zip_code := !!zip_code
-  ) %>%
-    dplyr::distinct() %>%
-    dplyr::mutate(
-      az_group = stringr::str_sub(.data$place, 1, 3),
-      plz_group = stringr::str_sub(.data$zip_code, 1, 6)
-    )
-
+  data_mun <- unique(data[c(place, zip_code)])
+  data_mun$az_group <- substr(data_mun[, place], 1, 3)
+  data_mun$plz_group <- substr(data_mun[, zip_code], 1, 6)
+  
   if (isTRUE(verbose)) {
-    cli::cli_inform("Found {.val {nrow(data_municipalities)}} distinct place{?s}.")
+    cli::cli_inform("Found {.val {nrow(data_mun)}} distinct place{?s}.")
     cli::cli_progress_step(
       msg = "Retrieving place names from database...",
       msg_done = "Retrieved place names from database.",
       msg_failed = "Couldn't retrieve place names from database.")
   }
-
+  
   # Acquire place data from BKG ----
   places_file <- "zip_places/ga_zip_places.csv.encryptr.bin"
   
@@ -52,34 +46,35 @@ bkg_match_places <- function(
       if (isTRUE(data_from_server)) {
         cli::cli_abort(c(
           "Cannot access local server under {.path http://10.6.13.132:8000/}.",
-          "!" = "Verify if you are inside the GESIS intranet or set {.var data_from_server = FALSE}"
+          "!" = "Verify that you are inside the GESIS intranet or set {.var data_from_server = FALSE}"
         ))
       } else {
         cli::cli_abort("Cannot read place data from {.path {data_path}}")
       }
     }
   )
-
-  tmp_out_file <- file("tmp_out_file.csv", "wb") # out file
-
-  openssl::decrypt_envelope(
+  
+  tmp_out_file <- tempfile(pattern = "tmp_out_file", fileext = ".csv")
+  
+  .decrypt <- openssl::decrypt_envelope(
     .crypt$data, .crypt$iv,
     .crypt$session,
     key = file.path(credentials_path, "id_rsa"),
     password = readLines(file.path(credentials_path, "pwd"))
-  ) %>%
-    writeBin(tmp_out_file)
-
-  close(tmp_out_file)
-
+  )
+  
+  writeBin(.decrypt, con = tmp_out_file)
+  
   bkg_zip_places <- data.table::fread(
-    "tmp_out_file.csv",
+    tmp_out_file,
     colClasses = 'character',
     encoding = "UTF-8"
   )
-
-  unlink("tmp_out_file.csv")
-
+  
+  names(bkg_zip_places) <- c(place, zip_code)
+  
+  unlink(tmp_out_file)
+  
   if (isTRUE(verbose)) {
     cli::cli_progress_done()
     cli::cli_progress_step(
@@ -88,63 +83,62 @@ bkg_match_places <- function(
       msg_failed = "Couldn't link place records."
     )
   }
-  
-  bkg_zip_places <- dplyr::mutate(
-    bkg_zip_places,
-    az_group = stringr::str_sub(.data$place, 1, 3),
-    plz_group = stringr::str_sub(.data$zip_code, 1, 6)
-  )
+
+  bkg_zip_places$az_group <- substr(bkg_zip_places[[place]], 1, 3)
+  bkg_zip_places$plz_group <- substr(bkg_zip_places[[zip_code]], 1, 6)
   
   # Match data (record linkage) ----
   suppressWarnings({
-    data_municipalities_pairs <- reclin2::pair_blocking(
-      data_municipalities,
+    data_mun_pairs <- reclin2::pair_blocking(
+      data_mun,
       bkg_zip_places,
       on = c("az_group", "plz_group")
     )
-    
-    data_municipalities_pairs <- reclin2::compare_pairs(
-      data_municipalities_pairs,
-      on = c("place", "zip_code"),
-      default_comparator = reclin2::jaro_winkler(threshold = place_match_quality)
-    )
-    
-    estimates <- reclin2::problink_em(
-      formula = ~.x + .y + place + zip_code,
-      data = data_municipalities_pairs
+
+    data_mun_compare <- reclin2::compare_pairs(
+      data_mun_pairs,
+      on = c(place, zip_code),
+      default_comparator = dyn_comparator(place_match_quality, opts)
     )
 
-    prediction <- stats::predict(
-      estimates,
-      pairs = data_municipalities_pairs,
+    fun_env <- environment()
+    est <- reclin2::problink_em(
+      formula = as.formula(
+        paste("~.x", ".y", place, zip_code, sep = "+"),
+        env = fun_env
+      ),
+      data = data_mun_compare
+    )
+    
+    pred <- stats::predict(
+      est,
+      pairs = data_mun_pairs,
       add = TRUE
     )
-
-    selection <- reclin2::select_greedy(
-      pairs = prediction,
+    
+    sel <- reclin2::select_greedy(
+      pairs = pred,
       variable = "selected",
       score = "weights"
     )
 
-    data_municipalities_real <- reclin2::link(
-      pairs = selection,
+    data_mun_real <- reclin2::link(
+      pairs = sel,
       all_x = TRUE,
       all_y = FALSE
-    ) %>%
-      tibble::as_tibble() %>%
-      dplyr::select(
-        !!place := .data$place.x,
-        !!zip_code := .data$zip_code.x,
-        place_matched = .data$place.y,
-        zip_code_matched = .data$zip_code.y
-      )
-  })
+    )
 
-  unmatched_places <- dplyr::filter(
-    data_municipalities_real,
-    is.na(.data$place_matched)
-  )
+    data_mun_real <- data.frame(
+      place = data_mun_real[[3L]],
+      zip_code = data_mun_real[[4L]],
+      place_matched = data_mun_real[[7L]],
+      zip_code_matched = data_mun_real[[8L]]
+    )
+    
+    names(data_mun_real)[1L:2L] <- c(place, zip_code)
+  })
   
+  unmatched_places <- data_mun_real[is.na(data_mun_real$place_matched), ]
   n_unmatched <- nrow(unmatched_places)
   
   if (isTRUE(verbose)) {
@@ -155,20 +149,17 @@ bkg_match_places <- function(
   }
 
   # Combine with input ----
-  data_matched <- dplyr::left_join(
+  data_matched <- merge(
     data,
-    data_municipalities_real,
-    by = c(place, zip_code)
-  ) %>%
-    dplyr::filter(!is.na(.data$place_matched)) %>%
-    dplyr::distinct()
-
-  data_unmatched <- dplyr::anti_join(
-    data,
-    data_matched,
-    by = "id"
+    data_mun_real,
+    by = c(place, zip_code),
+    all.x = TRUE,
+    sort = FALSE
   )
-
+  
+  data_matched <- unique(data_matched[!is.na(data_matched$place_matched), ])
+  data_unmatched <- data[!data$id %in% data_matched$id, ]
+  
   if (isTRUE(verbose)) {
     if (nrow(data_unmatched) && !nrow(data_matched)) {
       cli::cli_abort("No address could be matched with any place. Check your input!")
@@ -181,7 +172,7 @@ bkg_match_places <- function(
       )))
     }
   }
-
+  
   list(
     matched = data_matched,
     unmatched = data_unmatched,

@@ -21,32 +21,21 @@ spt_create_inspire_ids <- function(
     data <- sf::st_transform(data, 3035)
   }
 
-  coordinate_pairs <- data %>%
-    sf::st_coordinates() %>%
-    tibble::as_tibble()
+  coordinate_pairs <- tibble::as_tibble(sf::st_coordinates(data))
+  
+  id_name <- paste0(column_name, type)
 
-  id_name <- glue::glue("{column_name}{type}")
-
-  loop_to_evaluate <- dplyr::case_when(
-    type == "1km" ~ glue::glue(
-      "1kmN{substr(coordinate_pairs$Y %>% as.character(), 1, 4)}",
-      "E{substr(coordinate_pairs$X %>% as.character(), 1, 4)}"
-    ) %>%
-      as.character(),
-    type == "100m" ~ glue::glue(
-      "100mN{substr(coordinate_pairs$Y %>% as.character(), 1, 5)}",
-      "E{substr(coordinate_pairs$X %>% as.character(), 1, 5)}"
-    ) %>%
-      as.character()
+  inspire_ids <- sprintf(
+    "%sN%sE%s",
+    type,
+    substr(as.character(coordinate_pairs$Y), 1, 4 + (type == "100m")),
+    substr(as.character(coordinate_pairs$X), 1, 4 + (type == "100m"))
   )
 
-  expression_to_evaluate <- rlang::expr(!!rlang::sym(id_name) <- loop_to_evaluate)
-
-  eval(expression_to_evaluate)
-
   if (isTRUE(combine)) {
-    dplyr::bind_cols(data, !!id_name := get(id_name))
+    inspire_ids <- cbind(data, data.frame(id_name= inspire_ids))
+    names(inspire_ids)[names(inspire_ids) == "id_name"] <- id_name
   } else {
-    get(id_name)
+    inspire_ids
   }
 }

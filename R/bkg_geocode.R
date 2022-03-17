@@ -30,6 +30,7 @@ bkg_geocode <- function (
   data,
   cols = 1L:4L,
   epsg = 3035,
+  target_quality = 0.9,
   verbose = TRUE
 ) {
   cols <- names(data[cols])
@@ -68,8 +69,29 @@ bkg_geocode <- function (
     )
 
   })
+
+  geocoded_data <- do.call(rbind, geocoded_data)
+  geocoded_data <- sf::st_sf(geocoded_data, crs = epsg, sf_column_name = "geometry")
+
+  geocoded_data_na <- geocoded_data[
+    is.na(geocoded_data$AGS) |
+      geocoded_data$score < target_quality, 
+  ]
+  geocoded_data <- geocoded_data[
+    !is.na(geocoded_data$AGS) &
+      geocoded_data$score >= target_quality,
+  ]
+
+  output_list <- structure(
+    list(
+      geocoded = geocoded_data,
+      not_geocoded = geocoded_data_na,
+      call = match.call()
+    ),
+    type = "bkg"
+  )
   
-  geocoded_data <-  dplyr::bind_rows(geocoded_data) %>%
-    dplyr::bind_cols(data, .) %>%
-    sf::st_sf(crs = eval(parse(text = epsg)), sf_column_name = "geometry")
+  class(output_list) <- c("GeocodingResults", class(output_list))
+  
+  output_list
 }
