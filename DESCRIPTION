@@ -3,26 +3,30 @@ Type: Package
 Title: R Package for geocoding based on the data of the Federal Agency of 
     Cartography and Geodesy (BKG) in Germany
 Version: 0.1.0
-Authors@R: 
-    person("Stefan", "Jünger", email = "stefan.juenger@gesis.org", role = "cre")
+Date: 2022-03-11
+Authors@R: c(
+    person("Stefan", "Jünger", email = "stefan.juenger@gesis.org", role = c("cre", "aut")),
+    person("Jonas", "Lieth", email = "jonas.lieth@gesis.org", role = "aut")
+  )
 Description: R Package for geocoding based on the data of the Federal Agency of 
-    Cartography and Geodesy (BKG) in Germany.
+    Cartography and Geodesy (BKG) in Germany. The functions of this package
+    require access to the BKG address datasets (gdz_geokodierung_* or
+    wfs_geokodierung_*).
 License: CC BY 4.0
+URL: https://github.com/StefanJuenger/bkggeocoder
+BugReports: https://github.com/StefanJuenger/bkggeocoder/issues
 Encoding: UTF-8
+LazyData: true
+Depends: 
+    R (>= 2.10)
 Imports: 
-    glue,
-    magrittr,
     openssl,
-    openxlsx,
     cli,
-    readr,
     reclin2,
+    stringdist,
     sf,
-    stringr,
     tibble,
-    rlang,
     httr,
-    dplyr,
     data.table,
     xml2
 RoxygenNote: 7.1.2

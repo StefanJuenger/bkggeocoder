@@ -1,7 +1,10 @@
 TODO (sorted by relevance):
-- Reduce imports (dplyr, magrittr, glue, readr, stringr, openxlsx)
-- Implement a more flexible way to control string distance methods
 - Experiment with different string distance metrics
-- Properly implement BKG data caching
+- Experiment with OSGTS interface
 - Write vignette
-- Include test data (OSM)?
+
+DONE:
+- Properly implement BKG data caching -> readRDS, writeRDS
+- Implement a more flexible way to control string distance methods -> dyn_comparator function
+- Include test data (OSM)? -> address dataset of OSM community centers
+- Reduce imports (dplyr, magrittr, glue, readr, stringr, openxlsx)
