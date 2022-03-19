@@ -112,12 +112,12 @@ bkg_geocode_single_address <- function (
   }
 
   res_sf <- sf::read_sf(res)
-
+  
   # Clean data ----
   res_sf <- tibble::tibble(
-    score = res_sf$score,
-    quality = if ("qualitaet" %in% res_sf) res_sf$qualitaet else NA,
-    quality_class = if ("qkz" %in% res_sf) res_sf$qkz else NA,
+    score = if ("score" %in% colnames(res_sf)) res_sf$score else NA,
+    quality = if ("qualitaet" %in% colnames(res_sf)) res_sf$qualitaet else NA,
+    quality_class = if ("qkz" %in% colnames(res_sf)) res_sf$qkz else NA,
     address_input = trimws(paste(street, house_number, zip_code, place)),
     address_output = trimws(paste(
       if("strasse" %in% colnames(res_sf)) res_sf$strasse else NULL,
@@ -140,15 +140,19 @@ bkg_geocode_single_address <- function (
     zip_code_output = if("plz" %in% colnames(res_sf)) res_sf$plz else NA,
     place_output = if("ort" %in% colnames(res_sf)) res_sf$ort else NA,
     municipality = if ("gemeinde" %in% colnames(res_sf)) res_sf$gemeinde else NA,
-    verwaltungsgemeinschaft = if ("verwgem" %in% colnames(res_sf)) res_sf$verwgem else NA,
+    verwgem = if ("verwgem" %in% colnames(res_sf)) res_sf$verwgem else NA,
     district = if ("kreis" %in% colnames(res_sf)) res_sf$kreis else NA,
     governmental_district = if ("regbezirk" %in% colnames(res_sf)) res_sf$regbezirk else NA,
     state = if ("bundesland" %in% colnames(res_sf)) res_sf$bundesland else NA,
-    coordinate_type = res_sf$typ,
-    GITTER_ID_100m = spt_create_inspire_ids(res_sf, type = "100m"),
-    GITTER_ID_1km = spt_create_inspire_ids(res_sf, type = "1km"),
+    coordinate_type = if ("typ" %in% colnames(res_sf)) res_sf$typ else NA,
+    GITTER_ID_100m = if ("geometry" %in% colnames(res_sf)) {
+      spt_create_inspire_ids(res_sf, type = "100m")
+    } else NA,
+    GITTER_ID_1km = if ("geometry" %in% colnames(res_sf)) {
+      spt_create_inspire_ids(res_sf, type = "1km")
+    } else NA,
     source = "\u00a9 GeoBasis-DE / BKG, Deutsche Post Direkt GmbH, Statistisches Bundesamt, Wiesbaden (2021)",
-    geometry = res_sf$geometry
+    geometry = if ("geometry" %in% colnames(res_sf)) res_sf$geometry else NA
   )
 
   res_sf <- sf::st_as_sf(res_sf)
