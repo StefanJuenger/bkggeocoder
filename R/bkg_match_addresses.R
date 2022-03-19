@@ -46,7 +46,7 @@ bkg_match_addresses <- function(
     if (isTRUE(verbose)) {
       cli::cli_progress_update()
     }
-
+    
     # Create a pairs object with matching places and zip codes
     data_edited_pairs <- reclin2::pair(
       x = data_edited$matched[i, ],
@@ -60,7 +60,7 @@ bkg_match_addresses <- function(
     data_edited_compare <- reclin2::compare_pairs(
       data_edited_pairs,
       on = "whole_address",
-      default_comparator = reclin2::jaro_winkler(target_quality),
+      default_comparator = dyn_comparator(target_quality, opts),
       inplace = TRUE
     )
     
