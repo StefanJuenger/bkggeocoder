@@ -36,7 +36,6 @@ dyn_comparator <- function(threshold, opts) {
       } else if (opts$method == "qgram") {
         d / (nchar(x) + nchar(y) - 2 * opts$q - 2)
       } else d
-
       1 - d
     } else {
       (x > threshold) & !is.na(x)

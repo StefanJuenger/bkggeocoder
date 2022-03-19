@@ -11,7 +11,7 @@
 #' \code{\link[sf]{st_drivers}}.
 #' @param overwrite Logical; define whether exported file get overwritten
 #' (default is true)
-#' @param ... Further arguments passed to \code{\link[utils]{write.csv}} or
+#' @param ... Further arguments passed to \code{\link[utils]{write.table}} or
 #' \code{\link[sf]{st_write}}.
 #' 
 #' @returns \code{file}, invisibly.

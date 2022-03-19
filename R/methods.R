@@ -3,8 +3,8 @@
 #' @param x Object of class \code{GeocodingResults}
 #' @param which character string; choose which type of the results should be
 #' displayed
-#' @param ... Further arguments passed on to \code{\link[base]{print.data.frame}}
-#' or \code{\link[sf]{print.sf}}
+#' @param ... Further arguments passed on to \code{\link[print.data.frame]{base::print.data.frame()}}
+#' or \code{\link[sf:sf]{sf::print.sf()}}
 #'
 #' @export
 
