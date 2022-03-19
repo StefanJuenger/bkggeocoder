@@ -24,10 +24,18 @@
 #' character string or object of class \code{crs}). Defaults to EPSG:3035.
 #' @param place_match_quality Numeric; targeted quality of first record linkage
 #' round (see details). Corresponds to the threshold value of
-#' \code{\link[reclin2]{jaro_winkler}}.
+#' \code{\link[reclin2:select_n_to_m]{reclin::select_greedy()}}.
+#' @param place_match_opts Named list; further parameters to customize the first
+#' round of record linkage. All list elements are passed as arguments to
+#' \code{\link[stringdist]{stringdist}}. Possible values are \code{method},
+#' \code{weight}, \code{q}, \code{p}, and \code{bt}.
 #' @param target_quality Numeric; targeted quality of second record linkage
 #' round (see details). Corresponds to the threshold value of
-#' \code{\link[reclin2]{jaro_winkler}} and \code{\link[reclin2]{select_greedy}}.
+#' \code{\link[reclin2:select_n_to_m]{reclin::select_greedy()}}.
+#' @param target_opts Named list; further parameters to customize the second
+#' round of record linkage. All list elements are passed as arguments to
+#' \code{\link[stringdist]{stringdist}}. Possible values are \code{method},
+#' \code{weight}, \code{q}, \code{p}, and \code{bt}.
 #' @param verbose Whether to print informative messages and progress bars during
 #' the geocoding process.
 #' @param force_decrypt Whether to force the function to read in the encrypted
@@ -68,6 +76,29 @@
 #' choice, refer to the \code{\link[stringdist]{stringdist-metrics}}
 #' documentation from the \code{stringdist} package.
 #' 
+#' For geocoding \code{\link[bkggeocoder]{commaddr}} with a target quality of
+#' 0.9 and a Jaro-based place matching with a threshold of 0.9, the following
+#' metrics apply for different geocoding string distance methods, sorted by
+#' their percentage of successfully geocoded addresses:
+#' \preformatted{
+#' method                  geocoded  mean_score standard_deviation
+#' ---                     ---       ---        ---
+#' BKG                     0.9971617 0.9905730  0.01528181        
+#' Cosine                  0.9824847 0.9954517  0.01743213        
+#' Jaro                    0.9804481 0.9956101  0.01659732        
+#' Jaro-Winkler            0.9804481 0.9956101  0.01659732        
+#' Optimal string aligment 0.9782756 0.9948262  0.02017067        
+#' Longest Common String   0.9751527 0.9947565  0.01981582        
+#' Levenshtein             0.9712152 0.9952267  0.01914080        
+#' Damerau-Levenshtein     0.9712152 0.9952267  0.01915440        
+#' Q-gram                  0.9695859 0.9951019  0.01948970        
+#' Jaccard                 0.9532926 0.9931208  0.02255833        
+#' Hamming                 0.9416158 0.9968653  0.01574658        
+#' }
+#' However, keep in mind that this was tested on a clean dataset without many
+#' spelling errors and without setting weights or penalties. Different metrics
+#' might be reasonable choices for different use cases.
+#' 
 #' The overall quality of the geocoding can be evaluated by looking at the
 #' values of the column \code{score} (ranging from 0 to 1), which is based on
 #' the second round of record linkage. In general, for both rounds of record
@@ -75,11 +106,12 @@
 #' falls below 0.8, the result should be thoroughly scrutinized.
 #'
 #' Address data loading works using a temporary cache. Before trying to request
-#' and decrypt encrypted data chunks, the function will look for a file named
-#' \code{bkg_data_cache.rda} in \code{tempdir()}. If found, data decrypting will
-#' be skipped which can shorten the processing time significantly for large
-#' input datasets with a high number of different places. If needed, this
-#' behavior can be suppressed by setting \code{force_decrypt = TRUE}.
+#' and decrypt encrypted data chunks, the function will look for each place
+#' dataset in a directory named \code{bkg_data_cache} in \code{tempdir()}. If
+#' found, data decrypting will be skipped for the respective place which can
+#' shorten the processing time significantly for large input datasets with a
+#' high number of different places. If needed, this behavior can be suppressed
+#' by setting \code{force_decrypt = TRUE}.
 #' 
 #' @references van der Loo, M. P. J. (2014). The stringdist Package for
 #' Approximate String Matching. The R Journal, 6(1), 111–122. https://doi.org/10.32614/RJ-2014-011
@@ -131,7 +163,7 @@ bkg_geocode_offline <- function(
   
   cols <- names(data[cols])
   
-  data <- cbind(data.frame(id = row.names(data)), data)
+  data <- cbind(data.frame(.iid = row.names(data)), data)
 
   # Place Matching ----
   data_edited <- bkg_match_places(
@@ -182,7 +214,7 @@ bkg_geocode_offline <- function(
     cleaned_data <- merge(
       data,
       cleaned_data,
-      by = "id",
+      by = ".iid",
       all.x = TRUE,
       sort = TRUE
     )
@@ -191,7 +223,6 @@ bkg_geocode_offline <- function(
     # merged with
     cleaned_data <- sf::st_as_sf(tibble::as_tibble(cleaned_data))
     cleaned_data <- cleaned_data[!names(cleaned_data) %in% c(
-      "id",
       "street_input",
       "house_number_input",
       "zip_code_input",
@@ -200,7 +231,7 @@ bkg_geocode_offline <- function(
   }
   
   # Remove internal id
-  cleaned_data$id <- NULL
+  cleaned_data$.iid <- NULL
   
   if (!missing(crs)) {
     cleaned_data <- sf::st_transform(cleaned_data, crs = crs)
