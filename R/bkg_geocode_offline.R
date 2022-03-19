@@ -42,13 +42,14 @@
 #' files. This can be useful, if the BKG data should not be stored locally for
 #' too long or if the cached data are corrupt or outdated.
 #'
-#' @returns Returns a nested list of class GeocodingResult containing an
-#' \code{sf} dataframe of the geocoding results (\code{$geocoded_data}) as well
-#' as a dataframe with non-matched place names (\code{$unmatched_places}),
-#' addresses with non-matched places (\code{$non_geocoded_data}) and non-matched
-#' addresses (\code{$geocoded_data_na}). The object also includes a call
-#' object and descriptive summary statistics. Please note that original columns
-#' retrieved the suffix \code{"_input"}.
+#' @returns Returns a nested list of class GeocodingResults containing an
+#' \code{sf} dataframe of the geocoding results (\code{$geocoded}) as well
+#' as a dataframe with addresses with non-matched places (\code{$not_geocoded}),
+#' addresses that didn't pass the first round of record linkage
+#' (\code{$not_place_matched}) and the names of non-matched places
+#' (\code{$unmatched_places}). The object also includes a call object and
+#' descriptive summary statistics. Please note that original columns
+#' retrieve the suffix \code{"_input"}.
 #'
 #' @details The function first matches the zip code and place information from
 #' the data against the official names in the address/geocoordinate database

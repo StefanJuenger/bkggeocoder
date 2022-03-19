@@ -20,7 +20,8 @@
 
 bkg_export_geocodes <- function(
   data,
-  which = c("all", "successful", "na", "unmatched_places"),
+  which = c("all", "geocoded", "not_geocoded",
+            "not_place_matched", "unmatched_places"),
   file,
   overwrite = TRUE,
   ...
@@ -36,12 +37,8 @@ bkg_export_geocodes <- function(
 
   data_to_export <- if (which == "all") {
     do.call(rbind, list(data$geocoded, data$not_geocoded))
-  } else if (which == "successful") {
-    data$geocoded
-  } else if (which == "na") {
-    data$geocoded_data_na
-  } else if (which == "unmatched_places") {
-    data$unmatched_places
+  } else {
+    data[[which]]
   }
   
   if (!file.exists(file) || isTRUE(overwrite)) {

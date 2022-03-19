@@ -7,6 +7,10 @@
 #' @param max_features Numeric or character specifying the maximum amount of
 #' results to return. If \code{> 1}, returns matches in descending order by
 #' BKG score.
+#' 
+#' @returns \code{bkg_geocode_single_address} returns a tibble with a maximum of
+#' \code{max_features} rows and containing the address matches in descending
+#' order by their assigned quality score.
 #'
 #' @examples
 #' \dontrun{

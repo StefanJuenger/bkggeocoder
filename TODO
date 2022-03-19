@@ -1,5 +1,5 @@
 TODO (sorted by relevance):
-- Experiment with different string distance metrics
+- Look into why place matching is so unreliable
 - Experiment with OSGTS interface
 - Write vignette
 
@@ -8,3 +8,4 @@ DONE:
 - Implement a more flexible way to control string distance methods -> dyn_comparator function
 - Include test data (OSM)? -> address dataset of OSM community centers
 - Reduce imports (dplyr, magrittr, glue, readr, stringr, openxlsx)
+- Experiment with different string distance metrics

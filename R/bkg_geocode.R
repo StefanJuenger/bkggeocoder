@@ -9,9 +9,14 @@
 #' scores below this value will be dropped in the output.
 #' @inheritParams bkg_geocode_offline
 #'
-#' @return Returns a tidy simple features data frame of the original data object
-#' and the requested information from the geocoding service. Please note that
-#' all columns are converted to character strings.
+#' @return \code{bkg_geocode}r eturns a nested list of class GeocodingResults
+#' containing an \code{sf} dataframe of the geocoding results (\code{$geocoded})
+#' and a dataframe with addresses with non-matched places (\code{$not_geocoded}).
+#' Since the BKG geocoder does not need to subset the data using place matching,
+#' the output does not contain dataframes on unmatched places like in
+#' \code{\link{bkg_geocode_offline}}. The object also includes a call object and
+#' descriptive summary statistics. Please note that original columns
+#' retrieve the suffix \code{"_input"}.
 #'
 #' @examples
 #'
@@ -25,6 +30,8 @@
 #'
 #' bkg_geocode(data = address_data, epsg  = 4326)
 #' }
+#'
+#' @encoding UTF-8
 #'
 #' @export
 

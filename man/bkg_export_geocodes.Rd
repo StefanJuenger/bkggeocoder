@@ -6,7 +6,7 @@
 \usage{
 bkg_export_geocodes(
   data,
-  which = c("all", "successful", "na", "unmatched_places"),
+  which = c("all", "geocoded", "not_geocoded", "not_place_matched", "unmatched_places"),
   file,
   overwrite = TRUE,
   ...
