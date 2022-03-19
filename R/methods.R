@@ -20,12 +20,18 @@ print.GeocodingResults <- function(
   }
   indices <- c("score", "address_input", "address_output")
   
+  printed_df <- x[[which]][indices]
+  
+  if (inherits(printed_df, "sf")) {
+    printed_df <- sf::st_drop_geometry(printed_df)
+  }
+  
   cat("Class:", strrep(" ", 5), "GeocodingResults", "\n")
   cat("Geocoded:   ", nrow(x$geocoded), "/", n_input, "\n")
   cat("Mean score: ", round(mean(x$geocoded$score), 3), "\n")
   cat("Type:", strrep(" ", 6), attr(x, "type"), "\n\n")
-
-  print(x[[which]][indices], ...)
+  
+  print(printed_df, ...)
 }
 
 
