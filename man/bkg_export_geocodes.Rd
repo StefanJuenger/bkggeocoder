@@ -25,7 +25,7 @@ bkg_export_geocodes(
 \item{overwrite}{Logical; define whether exported file get overwritten
 (default is true)}
 
-\item{...}{Further arguments passed to \code{\link[utils]{write.csv}} or
+\item{...}{Further arguments passed to \code{\link[utils]{write.table}} or
 \code{\link[sf]{st_write}}.}
 }
 \value{
