@@ -21,14 +21,14 @@ bkg_clean_matched_addresses <- function(
   names(messy_data)[is_out] <- new_out
   names(messy_data)[is_inp] <- new_in
 
-  # clean dataset
+  # Clean dataset
   not_so_messy_data <- tibble::tibble(
-    id = messy_data$id,
+    .iid = messy_data$.iid,
     score = messy_data$score,
     address_input = paste(
       messy_data$whole_address_input,
-      messy_data$zip_code_input,
-      messy_data$place_input
+      messy_data[, zip_code],
+      messy_data[, place]
     ),
     street_input = messy_data$street_input,
     house_number_input = messy_data$house_number_input,
