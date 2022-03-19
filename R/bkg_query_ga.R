@@ -32,7 +32,7 @@ bkg_query_ga <- function(
     )
   }
   
-  c_count <- sum(places %in% dir(cache_dir))
+  c_count <- sum(places %in% gsub("_", "/", dir(cache_dir)))
   
   # Load address dataset for each unique place ----
   queried_ga <- lapply(places, function(place) {
@@ -40,14 +40,14 @@ bkg_query_ga <- function(
       cli::cli_progress_update(.envir = parent.frame(2))
     }
   
-    cplace <- gsub("/", "_", place)
-    is_cached <- cplace %in% dir(cache_dir)
-    cache_file <- file.path(cache_dir, cplace)
+    dataset_name <- gsub("/", "_", place)
+    is_cached <- dataset_name %in% dir(cache_dir)
+    cache_file <- file.path(cache_dir, dataset_name)
     if (is_cached && !force) {
       return(readRDS(cache_file))
     }
     
-    dataset_name <- gsub("/", "_", place)
+    
 
     if(isTRUE(data_from_server)) {
       .crypt_url <- paste0(
