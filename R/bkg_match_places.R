@@ -20,6 +20,12 @@ bkg_match_places <- function(
 
   # Prepare place data ----
   data_mun <- unique(data[c(place, zip_code)])
+  data_mun[, zip_code] <- sapply(data_mun[, zip_code], function(zip) {
+    zip <- as.character(zip)
+    if (nchar(zip) == 4) {
+      paste0(0, zip)
+    } else zip
+  }) 
   data_mun$az_group <- substr(data_mun[, place], 1, 3)
   data_mun$plz_group <- substr(data_mun[, zip_code], 1, 6)
   
@@ -51,7 +57,8 @@ bkg_match_places <- function(
       } else {
         cli::cli_abort("Cannot read place data from {.path {data_path}}")
       }
-    }
+    },
+    warning = function(w) NULL
   )
   
   tmp_out_file <- tempfile(pattern = "tmp_out_file", fileext = ".csv")
@@ -78,15 +85,15 @@ bkg_match_places <- function(
   if (isTRUE(verbose)) {
     cli::cli_progress_done()
     cli::cli_progress_step(
-      msg = "Linking place records...",
-      msg_done = "Place record linkage finished.",
-      msg_failed = "Couldn't link place records."
+      msg = "Pairing place records...",
+      msg_done = "Paired place records..",
+      msg_failed = "Couldn't pair place records."
     )
   }
 
   bkg_zip_places$az_group <- substr(bkg_zip_places[[place]], 1, 3)
   bkg_zip_places$plz_group <- substr(bkg_zip_places[[zip_code]], 1, 6)
-  
+
   # Match data (record linkage) ----
   suppressWarnings({
     data_mun_pairs <- reclin2::pair_blocking(
@@ -100,6 +107,14 @@ bkg_match_places <- function(
       on = c(place, zip_code),
       default_comparator = dyn_comparator(place_match_quality, opts)
     )
+    
+    if (isTRUE(verbose)) {
+      cli::cli_progress_step(
+        msg = "Calculating place matching scores...",
+        msg_done = "Calculated place matching scores.",
+        msg_failed = "Couldn't calculate place matching scores."
+      )
+    }
 
     fun_env <- environment()
     est <- reclin2::problink_em(
@@ -116,10 +131,19 @@ bkg_match_places <- function(
       add = TRUE
     )
     
+    if (isTRUE(verbose)) {
+      cli::cli_progress_step(
+        msg = "Linking and selecting records...",
+        msg_done = "Place record linkage finished.",
+        msg_failed = "Couldn't link data."
+      )
+    }
+    
     sel <- reclin2::select_greedy(
       pairs = pred,
       variable = "selected",
-      score = "weights"
+      score = "weights",
+      threshold = place_match_quality
     )
 
     data_mun_real <- reclin2::link(
@@ -158,7 +182,7 @@ bkg_match_places <- function(
   )
   
   data_matched <- unique(data_matched[!is.na(data_matched$place_matched), ])
-  data_unmatched <- data[!data$id %in% data_matched$id, ]
+  data_unmatched <- data[!data$.iid %in% data_matched$.iid, ]
   
   if (isTRUE(verbose)) {
     if (nrow(data_unmatched) && !nrow(data_matched)) {
