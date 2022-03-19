@@ -9,6 +9,7 @@ bkg_geocode(
   data,
   cols = 1L:4L,
   epsg = 3035,
+  join_with_original = FALSE,
   target_quality = 0.9,
   verbose = TRUE
 )
@@ -23,11 +24,27 @@ bkg_geocode_single_address(
 )
 }
 \arguments{
+\item{data}{Dataframe containing address data. The dataframe must contain
+at least four columns carrying the street name, house number, zip code and
+municipality name. The corresponding column names or indices can be specified
+using the \code{cols} argument.}
+
+\item{cols}{Numeric or character of length 4; names or indices of the columns
+containing relevant geocoding information. By default, interprets the
+first four columns as street, house number, zip code and municipality (in
+this order).}
+
 \item{epsg}{Numeric or character string containing an EPSG code for the
 requested CRS.}
 
+\item{join_with_original}{Logical; should the output be joined with the
+input data?}
+
 \item{target_quality}{Numeric; targeted quality. All geocoded addresses with
 scores below this value will be dropped in the output.}
+
+\item{verbose}{Whether to print informative messages and progress bars during
+the geocoding process.}
 
 \item{street}{Character string for the street name}
 

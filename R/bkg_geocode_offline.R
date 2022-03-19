@@ -81,19 +81,19 @@
 #' metrics apply for different geocoding string distance methods, sorted by
 #' their percentage of successfully geocoded addresses:
 #' \preformatted{
-#' method                  geocoded  mean_score standard_deviation
-#' ---                     ---       ---        ---
-#' BKG                     0.9971617 0.9905730  0.01528181        
-#' Cosine                  0.9824847 0.9954517  0.01743213        
-#' Jaro                    0.9804481 0.9956101  0.01659732        
-#' Jaro-Winkler            0.9804481 0.9956101  0.01659732        
-#' Optimal string aligment 0.9782756 0.9948262  0.02017067        
-#' Longest Common String   0.9751527 0.9947565  0.01981582        
-#' Levenshtein             0.9712152 0.9952267  0.01914080        
-#' Damerau-Levenshtein     0.9712152 0.9952267  0.01915440        
-#' Q-gram                  0.9695859 0.9951019  0.01948970        
-#' Jaccard                 0.9532926 0.9931208  0.02255833        
-#' Hamming                 0.9416158 0.9968653  0.01574658        
+#' method                  geocoded spearman mean     sd
+#' ---                     ---      ---      ---      ---
+#' BKG                     0.9972   1.0000   0.9906   0.0153
+#' Cosine                  0.9251   0.3757   0.9955   0.0174
+#' Jaro                    0.9232   0.3833   0.9956   0.0166
+#' Jaro-Winkler            0.9232   0.3833   0.9956   0.0166
+#' Optimal string aligment 0.9211   0.3659   0.9948   0.0202
+#' Longest Common String   0.9182   0.3668   0.9948   0.0198
+#' Levenshtein             0.9145   0.3408   0.9952   0.0191
+#' Damerau-Levenshtein     0.9145   0.3408   0.9952   0.0192
+#' Q-gram                  0.9129   0.3339   0.9951   0.0195
+#' Jaccard                 0.8976   0.1779   0.9931   0.0226
+#' Hamming                 0.8866   0.2711   0.9969   0.0157
 #' }
 #' However, keep in mind that this was tested on a clean dataset without many
 #' spelling errors and without setting weights or penalties. Different metrics

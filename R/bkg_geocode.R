@@ -7,6 +7,7 @@
 #' requested CRS.
 #' @param target_quality Numeric; targeted quality. All geocoded addresses with
 #' scores below this value will be dropped in the output.
+#' @inheritParams bkg_geocode_offline
 #'
 #' @return Returns a tidy simple features data frame of the original data object
 #' and the requested information from the geocoding service. Please note that

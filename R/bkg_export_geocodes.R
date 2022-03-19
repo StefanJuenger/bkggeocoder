@@ -49,7 +49,7 @@ bkg_export_geocodes <- function(
       coords <- sf::st_coordinates(data_to_export)
       data_to_export <- cbind.data.frame(coords, data_to_export)
       data_to_export$geometry <- NULL
-      write.table(data_to_export, file, ...)
+      utils::write.table(data_to_export, file, ...)
     } else {
       sf::st_write(data_to_export, file, ...)
     }

@@ -16,7 +16,8 @@
 \item{which}{character string; choose which type of the results should be
 displayed}
 
-\item{...}{Further arguments passed on to \code{\link[print.data.frame]{base::print.data.frame()}}
+\item{...}{Further arguments passed on to
+\code{\link[base:print.data.frame]{base::print.data.frame()}}
 or \code{\link[sf:sf]{sf::print.sf()}}}
 }
 \description{

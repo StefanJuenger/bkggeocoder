@@ -118,7 +118,7 @@ bkg_match_places <- function(
 
     fun_env <- environment()
     est <- reclin2::problink_em(
-      formula = as.formula(
+      formula = stats::as.formula(
         paste("~.x", ".y", place, zip_code, sep = "+"),
         env = fun_env
       ),
