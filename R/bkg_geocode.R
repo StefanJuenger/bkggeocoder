@@ -5,7 +5,8 @@
 #'
 #' @param epsg Numeric or character string containing an EPSG code for the
 #' requested CRS.
-#' @inheritParams bkg_geocode_offline
+#' @param target_quality Numeric; targeted quality. All geocoded addresses with
+#' scores below this value will be dropped in the output.
 #'
 #' @return Returns a tidy simple features data frame of the original data object
 #' and the requested information from the geocoding service. Please note that
@@ -30,6 +31,7 @@ bkg_geocode <- function (
   data,
   cols = 1L:4L,
   epsg = 3035,
+  join_with_original = FALSE,
   target_quality = 0.9,
   verbose = TRUE
 ) {
@@ -55,12 +57,14 @@ bkg_geocode <- function (
     )
   }
   
+  data <- cbind(data.frame(.iid = row.names(data)), data)
+  
   geocoded_data <- lapply(1:nrow(data), function(i) {
     if (isTRUE(verbose)) {
       cli::cli_progress_update(.envir = parent.frame(2))
     }
     
-    bkg_geocode_single_address(
+    res <- bkg_geocode_single_address(
       street = data[[cols[1]]][i],
       house_number = data[[cols[2]]][i],
       zip_code = data[[cols[3]]][i],
@@ -68,17 +72,34 @@ bkg_geocode <- function (
       epsg = epsg
     )
 
+    res$.iid <- i
+    res
   })
 
   geocoded_data <- do.call(rbind, geocoded_data)
   geocoded_data <- sf::st_sf(geocoded_data, crs = epsg, sf_column_name = "geometry")
+  
+  if (isTRUE(join_with_original)) {
+    geocoded_data <- merge(
+      data,
+      geocoded_data,
+      by = ".iid",
+      all.x = TRUE,
+      sort = TRUE
+    )
+    
+    geocoded_data <- sf::st_as_sf(tibble::as_tibble(geocoded_data))
+  }
+  
+  # Remove internal identifier
+  geocoded_data$.iid <- NULL
 
   geocoded_data_na <- geocoded_data[
-    is.na(geocoded_data$AGS) |
+    is.na(geocoded_data$RS) |
       geocoded_data$score < target_quality, 
   ]
   geocoded_data <- geocoded_data[
-    !is.na(geocoded_data$AGS) &
+    !is.na(geocoded_data$RS) &
       geocoded_data$score >= target_quality,
   ]
 
