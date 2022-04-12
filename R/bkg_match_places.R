@@ -34,7 +34,8 @@ bkg_match_places <- function(
     cli::cli_progress_step(
       msg = "Retrieving place names from database...",
       msg_done = "Retrieved place names from database.",
-      msg_failed = "Couldn't retrieve place names from database.")
+      msg_failed = "Could not retrieve place names from database."
+    )
   }
   
   # Acquire place data from BKG ----
@@ -87,7 +88,7 @@ bkg_match_places <- function(
     cli::cli_progress_step(
       msg = "Pairing place records...",
       msg_done = "Paired place records..",
-      msg_failed = "Couldn't pair place records."
+      msg_failed = "Could not pair place records."
     )
   }
 
@@ -112,7 +113,7 @@ bkg_match_places <- function(
       cli::cli_progress_step(
         msg = "Calculating place matching scores...",
         msg_done = "Calculated place matching scores.",
-        msg_failed = "Couldn't calculate place matching scores."
+        msg_failed = "Could not calculate place matching scores."
       )
     }
 
@@ -135,7 +136,7 @@ bkg_match_places <- function(
       cli::cli_progress_step(
         msg = "Linking and selecting records...",
         msg_done = "Place record linkage finished.",
-        msg_failed = "Couldn't link data."
+        msg_failed = "Could not link data."
       )
     }
     

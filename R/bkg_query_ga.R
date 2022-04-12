@@ -43,7 +43,7 @@ bkg_query_ga <- function(
     dataset_name <- gsub("/", "_", place)
     is_cached <- dataset_name %in% dir(cache_dir)
     cache_file <- file.path(cache_dir, dataset_name)
-    if (is_cached && !force) {
+    if (is_cached && !isTRUE(force)) {
       return(readRDS(cache_file))
     }
     

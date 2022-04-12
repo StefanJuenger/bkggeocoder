@@ -118,20 +118,19 @@ For geocoding \code{\link[bkggeocoder]{commaddr}} with a target quality of
 0.9 and a Jaro-based place matching with a threshold of 0.9, the following
 metrics apply for different geocoding string distance methods, sorted by
 their percentage of successfully geocoded addresses:
-\preformatted{
-method                  geocoded spearman mean     sd
----                     ---      ---      ---      ---
-BKG                     0.9972   1.0000   0.9906   0.0153
-Cosine                  0.9251   0.3757   0.9955   0.0174
-Jaro                    0.9232   0.3833   0.9956   0.0166
-Jaro-Winkler            0.9232   0.3833   0.9956   0.0166
-Optimal string aligment 0.9211   0.3659   0.9948   0.0202
-Longest Common String   0.9182   0.3668   0.9948   0.0198
-Levenshtein             0.9145   0.3408   0.9952   0.0191
-Damerau-Levenshtein     0.9145   0.3408   0.9952   0.0192
-Q-gram                  0.9129   0.3339   0.9951   0.0195
-Jaccard                 0.8976   0.1779   0.9931   0.0226
-Hamming                 0.8866   0.2711   0.9969   0.0157
+\tabular{lrrrr}{
+\strong{method} \tab \strong{geocoded} \tab \strong{spearman} \tab \strong{mean_score} \tab \strong{sd_score} \cr
+BKG                     \tab 0.9972 \tab 1.0000 \tab 0.9906 \tab 0.0153\cr
+Cosine                  \tab 0.9251 \tab 0.3757 \tab 0.9955 \tab 0.0174\cr
+Jaro                    \tab 0.9232 \tab 0.3833 \tab 0.9956 \tab 0.0166\cr
+Jaro-Winkler            \tab 0.9232 \tab 0.3833 \tab 0.9956 \tab 0.0166\cr
+Optimal string aligment \tab 0.9211 \tab 0.3659 \tab 0.9948 \tab 0.0202\cr
+Longest Common String   \tab 0.9182 \tab 0.3668 \tab 0.9948 \tab 0.0198\cr
+Levenshtein             \tab 0.9145 \tab 0.3408 \tab 0.9952 \tab 0.0191\cr
+Damerau-Levenshtein     \tab 0.9145 \tab 0.3408 \tab 0.9952 \tab 0.0192\cr
+Q-gram                  \tab 0.9129 \tab 0.3339 \tab 0.9951 \tab 0.0195\cr
+Jaccard                 \tab 0.8976 \tab 0.1779 \tab 0.9931 \tab 0.0226\cr
+Hamming                 \tab 0.8866 \tab 0.2711 \tab 0.9969 \tab 0.0157
 }
 However, keep in mind that this was tested on a clean dataset without many
 spelling errors and without setting weights or penalties. Different metrics
