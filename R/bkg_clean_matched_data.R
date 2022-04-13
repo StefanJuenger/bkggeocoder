@@ -5,7 +5,7 @@ bkg_clean_matched_addresses <- function(
 ) {
   zip_code <- cols[3]
   place <- cols[4]
-  
+
   if (isTRUE(verbose)) {
     cli::cli_progress_step(
       msg = "Cleaning up geocoding output...",
@@ -13,7 +13,7 @@ bkg_clean_matched_addresses <- function(
       msg_failed = "Failed to clean up geocoding output."
     )
   }
-  
+
   is_out <- grepl(".y", names(messy_data), fixed = TRUE)
   is_inp <- grepl(".x", names(messy_data), fixed = TRUE)
   new_out <- gsub(".y", "_output", names(messy_data)[is_out], fixed = TRUE)
@@ -27,8 +27,8 @@ bkg_clean_matched_addresses <- function(
     score = messy_data$score,
     address_input = paste(
       messy_data$whole_address_input,
-      messy_data[, zip_code],
-      messy_data[, place]
+      messy_data[, zip_code_input],
+      messy_data[, place_input]
     ),
     street_input = messy_data$street_input,
     house_number_input = messy_data$house_number_input,
@@ -48,7 +48,7 @@ bkg_clean_matched_addresses <- function(
     y = messy_data$y,
     source = "\u00a9 GeoBasis-DE / BKG, Deutsche Post Direkt GmbH, Statistisches Bundesamt, Wiesbaden (2021)"
   )
-  
+
   not_so_messy_data_sf <- sf::st_as_sf(
     not_so_messy_data,
     coords = c("x", "y"),
@@ -56,7 +56,7 @@ bkg_clean_matched_addresses <- function(
     remove = TRUE,
     na.fail = FALSE
   )
-  
+
   clean_data <- tibble::add_column(
     not_so_messy_data_sf,
     Gitter_ID_1km = spt_create_inspire_ids(data = not_so_messy_data_sf, type = "1km"),
@@ -67,6 +67,6 @@ bkg_clean_matched_addresses <- function(
   if (isTRUE(verbose)) {
     cli::cli_progress_done()
   }
-  
+
   clean_data
 }
