@@ -7,9 +7,9 @@ bkg_match_addresses <- function(
   verbose
 ) {
   street <- cols[1]
-  house_number <- cols[2]
-  zip_code <- cols[3]
-  place <- cols[4]
+  house_number <- ifelse(length(cols) == 4, cols[2], "")
+  zip_code <- ifelse(length(cols) == 4, cols[3], cols[2])
+  place <- ifelse(length(cols) == 4, cols[4], cols[3])
 
   # Prepare data ----
   data_edited_fixed_street <- gsub("tr[.]", "tra\u00dfe", data_edited$matched[[street]])
@@ -25,7 +25,7 @@ bkg_match_addresses <- function(
     house_coordinates$street, " ", house_coordinates$house_number,
     house_coordinates$house_number_add
   ))
-  
+
   if (isTRUE(verbose)) {
     cli::cli_progress_bar(
       name = "Matching address data",
@@ -37,16 +37,16 @@ bkg_match_addresses <- function(
       format_failed = "Failed at address {cli::pb_current}/{cli::pb_total}."
     )
   }
-  
+
   joined_data <- list()
-  
+
   # Match data with BKG data (record linkage) ----
   for (i in 1:nrow(data_edited$matched)) {
-    
+
     if (isTRUE(verbose)) {
       cli::cli_progress_update()
     }
-    
+
     # Create a pairs object with matching places and zip codes
     data_edited_pairs <- reclin2::pair(
       x = data_edited$matched[i, ],
@@ -55,7 +55,7 @@ bkg_match_addresses <- function(
           zip_code == data_edited$matched[i,]$zip_code_matched
       ]
     )
-    
+
     # Compute Jaro-Winkler scores of the pairs
     data_edited_compare <- reclin2::compare_pairs(
       data_edited_pairs,
@@ -63,9 +63,9 @@ bkg_match_addresses <- function(
       default_comparator = dyn_comparator(target_quality, opts),
       inplace = TRUE
     )
-    
+
     weight_i <- max(data_edited_compare$whole_address)
-    
+
     # Select data below threshold using a greedy selection algorithm
     selection <- reclin2::select_greedy(
       data_edited_compare,
@@ -74,21 +74,21 @@ bkg_match_addresses <- function(
       threshold = target_quality
     )
     selection <- selection[selection$threshold]
-    
+
     # Link results with original data
     joined_data[[i]] <- reclin2::link(
       selection,
       all_x = TRUE,
       all_y = FALSE
     )
-    
+
     joined_data[[i]] <- cbind(joined_data[[i]], score = weight_i)
   }
-  
+
   if (isTRUE(verbose)) {
     cli::cli_progress_done()
   }
-  
+
   joined_data <- do.call(rbind, joined_data)
 
   # Fix scores ----
@@ -105,9 +105,9 @@ bkg_match_addresses <- function(
   hn_mismatch <- !hn.x == hn.y & !is.na(hn.x) & !is.na(hn.y)
   incorrect_scores <- joined_data$score[hn_mismatch]
   joined_data$score[hn_mismatch] <- incorrect_scores - 0.05
-  
+
   geocoded <- joined_data[!is.na(joined_data$RS), ]
-  
+
   if (isTRUE(verbose)) {
     if (!nrow(joined_data)) {
       cli::cli_abort("No address could be geocoded. Check your input!")
@@ -120,6 +120,6 @@ bkg_match_addresses <- function(
       ))
     }
   }
-  
+
   joined_data
 }

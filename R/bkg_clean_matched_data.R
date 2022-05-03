@@ -3,8 +3,8 @@ bkg_clean_matched_addresses <- function(
   cols,
   verbose
 ) {
-  zip_code <- cols[3]
-  place <- cols[4]
+  zip_code <- ifelse(length(cols) == 4, cols[3], cols[2])
+  place <- ifelse(length(cols) == 4, cols[4], cols[3])
 
   if (isTRUE(verbose)) {
     cli::cli_progress_step(

@@ -60,7 +60,7 @@
 #' against the addresses in the address/geocoordinate database (second round of
 #' record linkage). Again, you can play with the quality by adjusting
 #' the \code{target_quality} parameter.
-#' 
+#'
 #' Record linkage is employed using string distance metrics from
 #' \code{\link[stringdist]{stringdist}}. By default, scores for both place
 #' matching and geocoding are calculated using the standard Jaro distance. This
@@ -76,7 +76,7 @@
 #' For more details on the method
 #' choice, refer to the \code{\link[stringdist]{stringdist-metrics}}
 #' documentation from the \code{stringdist} package.
-#' 
+#'
 #' For geocoding \code{\link[bkggeocoder]{commaddr}} with a target quality of
 #' 0.9 and a Jaro-based place matching with a threshold of 0.9, the following
 #' metrics apply for different geocoding string distance methods, sorted by
@@ -98,7 +98,7 @@
 #' However, keep in mind that this was tested on a clean dataset without many
 #' spelling errors and without setting weights or penalties. Different metrics
 #' might be reasonable choices for different use cases.
-#' 
+#'
 #' The overall quality of the geocoding can be evaluated by looking at the
 #' values of the column \code{score} (ranging from 0 to 1), which is based on
 #' the second round of record linkage. In general, for both rounds of record
@@ -112,10 +112,10 @@
 #' shorten the processing time significantly for large input datasets with a
 #' high number of different places. If needed, this behavior can be suppressed
 #' by setting \code{force_decrypt = TRUE}.
-#' 
+#'
 #' @references van der Loo, M. P. J. (2014). The stringdist Package for
 #' Approximate String Matching. The R Journal, 6(1), 111–122. https://doi.org/10.32614/RJ-2014-011
-#' 
+#'
 #' @encoding UTF-8
 #' @md
 #'
@@ -137,7 +137,7 @@ bkg_geocode_offline <- function(
   force_decrypt = FALSE
 ) {
   stopifnot(is.data.frame(data))
-  stopifnot(length(cols) == 4L)
+  # stopifnot(length(cols) == 4L)
   if (isFALSE(data_from_server)) stopifnot(dir.exists(data_path))
   stopifnot(dir.exists(credentials_path))
   stopifnot(is.logical(data_from_server))
@@ -157,12 +157,12 @@ bkg_geocode_offline <- function(
       "i" = "Targeted quality of place-matching: {.val {place_match_quality}}",
       "i" = "Targeted quality of geocoding: {.val {target_quality}}")
     )
-    
+
     cli::cli_h2("Subsetting data")
   }
-  
+
   cols <- names(data[cols])
-  
+
   data <- cbind(data.frame(.iid = row.names(data)), data)
 
   # Place Matching ----
@@ -218,7 +218,7 @@ bkg_geocode_offline <- function(
       all.x = TRUE,
       sort = TRUE
     )
-    
+
     # Remove all '_input' variables since they are already in the original to be
     # merged with
     cleaned_data <- sf::st_as_sf(tibble::as_tibble(cleaned_data))
@@ -229,10 +229,10 @@ bkg_geocode_offline <- function(
       "place_input"
     )]
   }
-  
+
   # Remove internal id
   cleaned_data$.iid <- NULL
-  
+
   if (!missing(crs)) {
     cleaned_data <- sf::st_transform(cleaned_data, crs = crs)
   }
