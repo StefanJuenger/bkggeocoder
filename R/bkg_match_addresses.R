@@ -12,6 +12,10 @@ bkg_match_addresses <- function(
   place <- ifelse(length(cols) == 4, cols[4], cols[3])
 
   # Prepare data ----
+  is_mannheim <- data_edited$matched[[place]] == "Mannheim"
+  data_edited$matched[is_mannheim, street] <-
+    gsub("^([A-Z])([1-9])$", "\\1 \\2", data_edited$matched[is_mannheim, street])
+  
   data_edited_fixed_street <- gsub("tr[.]", "tra\u00dfe", data_edited$matched[[street]])
   data_edited$matched$whole_address <- trimws(paste0(
     data_edited_fixed_street,
@@ -74,6 +78,9 @@ bkg_match_addresses <- function(
       threshold = target_quality
     )
     selection <- selection[selection$threshold]
+    
+    # Use this if you need to inspect the address matching individually:
+    # if (!sum(selection$threshold)) print(i)
 
     # Link results with original data
     joined_data[[i]] <- reclin2::link(
@@ -91,6 +98,13 @@ bkg_match_addresses <- function(
 
   joined_data <- do.call(rbind, joined_data)
 
+  # Fix names
+  for (name in c(street, house_number, zip_code, place)) {
+    if (name %in% names(joined_data)) {
+      names(joined_data)[names(joined_data) == name] <- paste0(name, ".x")
+    }
+  }
+  
   # Fix scores ----
   regex_chr <- "[0-9]+[a-z]*"
   hn.x <- unlist(regmatches(

@@ -14,10 +14,10 @@ bkg_clean_matched_addresses <- function(
     )
   }
 
-  is_out <- grepl(".y", names(messy_data), fixed = TRUE)
-  is_inp <- grepl(".x", names(messy_data), fixed = TRUE)
-  new_out <- gsub(".y", "_output", names(messy_data)[is_out], fixed = TRUE)
-  new_in <- gsub(".x", "_input", names(messy_data)[is_inp], fixed = TRUE)
+  is_out <- grepl("\\.y$", names(messy_data))
+  is_inp <- grepl("\\.x$", names(messy_data))
+  new_out <- gsub("\\.y$", "_output", names(messy_data)[is_out])
+  new_in <- gsub("\\.x$", "_input", names(messy_data)[is_inp])
   names(messy_data)[is_out] <- new_out
   names(messy_data)[is_inp] <- new_in
 
@@ -27,8 +27,8 @@ bkg_clean_matched_addresses <- function(
     score = messy_data$score,
     address_input = paste(
       messy_data$whole_address_input,
-      messy_data[, zip_code_input],
-      messy_data[, place_input]
+      messy_data[[paste0(zip_code, "_input")]],
+      messy_data[[paste0(place, "_input")]]
     ),
     street_input = messy_data$street_input,
     house_number_input = messy_data$house_number_input,
