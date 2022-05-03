@@ -13,7 +13,6 @@ bkg_query_ga <- function(
   force
 ) {
   cache_dir <- file.path(tempdir(), "bkg_data_cache")
-  cache_dir <- "bkg_data_cache"
   
   if (!dir.exists(cache_dir)) {
     dir.create(cache_dir)
