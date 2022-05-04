@@ -20,12 +20,12 @@ bkg_match_places <- function(
 
   # Prepare place data ----
   data_mun <- unique(data[c(place, zip_code)])
-  data_mun[, zip_code] <- sapply(data_mun[, zip_code], function(zip) {
+  data_mun[, zip_code] <- vapply(data_mun[, zip_code], function(zip) {
     zip <- as.character(zip)
     if (nchar(zip) == 4) {
       paste0(0, zip)
     } else zip
-  })
+  }, FUN.VALUE = character(1))
   data_mun$az_group <- substr(data_mun[, place], 1, 3)
   data_mun$plz_group <- substr(data_mun[, zip_code], 1, 6)
 
@@ -155,7 +155,7 @@ bkg_match_places <- function(
 
     data_mun_real <- data.frame(
       place = data_mun_real[[3L]],
-      zip_code = data_mun_real[[4L]],
+      zip_code = as.numeric(data_mun_real[[4L]]),
       place_matched = data_mun_real[[7L]],
       zip_code_matched = data_mun_real[[8L]]
     )
@@ -168,7 +168,7 @@ bkg_match_places <- function(
 
   if (isTRUE(verbose)) {
     if (n_unmatched) {
-      cli::cli_inform(c("!" = "WARNING: {.val { n_unmatched}} place{?s} left unmatched."))
+      cli::cli_inform(c("!" = "WARNING: {.val {n_unmatched}} place{?s} left unmatched."))
     }
     cli::cli_progress_done()
   }
