@@ -127,7 +127,8 @@ bkg_match_places <- function(
     pred <- stats::predict(
       est,
       pairs = data_mun_compare,
-      add = TRUE
+      add = TRUE,
+      type = "all"
     )
 
     if (isTRUE(verbose)) {
@@ -141,7 +142,7 @@ bkg_match_places <- function(
     sel <- reclin2::select_greedy(
       pairs = pred,
       variable = "threshold",
-      score = "weights",
+      score = "mprob",
       threshold = place_match_quality
     )
     sel <- sel[sel$threshold]
