@@ -1,6 +1,6 @@
 #' Address data of community center addresses
 #' 
-#' @description A dataset containing the addresses of community centers in
+#' @description A tibble containing the addresses of community centers in
 #' Germany. The dataset was extracted from OpenStreetMap on 2022-03-12 17:25.
 #' 
 #' @format A data.frame with 7751 rows and 4 columns:

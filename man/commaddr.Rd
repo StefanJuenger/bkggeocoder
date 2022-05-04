@@ -20,7 +20,7 @@ https://www.openstreetmap.org/, https://overpass-turbo.eu/
 commaddr
 }
 \description{
-A dataset containing the addresses of community centers in
+A tibble containing the addresses of community centers in
 Germany. The dataset was extracted from OpenStreetMap on 2022-03-12 17:25.
 }
 \details{
