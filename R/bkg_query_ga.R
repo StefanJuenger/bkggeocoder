@@ -99,8 +99,7 @@ bkg_query_ga <- function(
   
   if (isTRUE(verbose)) {
     cli::cli_alert_success(paste(
-      "{.val {c_count}} places were recovered from the",
-      "cache."
+      "{.val {c_count}} place{?s} were recovered from the cache."
     ))
     cli::cli_alert_success(paste(
       "Read in {.val {nrow(queried_ga)}} address{?es} within",
