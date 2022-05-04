@@ -117,18 +117,16 @@ bkg_match_places <- function(
       )
     }
 
+    formula_chr <- paste0("~", place, " + ", zip_code)
     fun_env <- environment()
     est <- reclin2::problink_em(
-      formula = stats::as.formula(
-        paste("~.x", ".y", place, zip_code, sep = "+"),
-        env = fun_env
-      ),
+      formula = stats::as.formula(formula_chr, env = fun_env),
       data = data_mun_compare
     )
 
     pred <- stats::predict(
       est,
-      pairs = data_mun_pairs,
+      pairs = data_mun_compare,
       add = TRUE
     )
 
@@ -142,10 +140,11 @@ bkg_match_places <- function(
 
     sel <- reclin2::select_greedy(
       pairs = pred,
-      variable = "selected",
+      variable = "threshold",
       score = "weights",
       threshold = place_match_quality
     )
+    sel <- sel[sel$threshold]
 
     data_mun_real <- reclin2::link(
       pairs = sel,
