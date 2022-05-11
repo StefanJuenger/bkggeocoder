@@ -12,11 +12,19 @@ bkg_match_addresses <- function(
   place <- ifelse(length(cols) == 4, cols[4], cols[3])
 
   # Prepare data ----
-  is_mannheim <- data_edited$matched[[place]] == "Mannheim"
-  data_edited$matched[is_mannheim, street] <-
-    gsub("^([A-Z])([1-9])$", "\\1 \\2", data_edited$matched[is_mannheim, street])
+  # Fix Mannheim square addresses
+  data_edited$matched[, street] <- gsub(
+    "^([A-Z])([1-9])$", "\\1 \\2",
+    data_edited$matched[, street]
+  )
   
-  data_edited_fixed_street <- gsub("tr[.]", "tra\u00dfe", data_edited$matched[[street]])
+  # Expand Str. to Straße
+  data_edited_fixed_street <- gsub(
+    "tr[.]", "tra\u00dfe",
+    data_edited$matched[[street]]
+  )
+  
+  # Create address string
   data_edited$matched$whole_address <- trimws(paste0(
     data_edited_fixed_street,
     if (house_number %in% colnames(data_edited$matched)) {
@@ -41,15 +49,13 @@ bkg_match_addresses <- function(
       format_failed = "Failed at address {cli::pb_current}/{cli::pb_total}."
     )
   }
-
+  
   joined_data <- list()
 
   # Match data with BKG data (record linkage) ----
   for (i in 1:nrow(data_edited$matched)) {
 
-    if (isTRUE(verbose)) {
-      cli::cli_progress_update()
-    }
+    if (isTRUE(verbose)) cli::cli_progress_update()
 
     # Create a pairs object with matching places and zip codes
     data_edited_pairs <- reclin2::pair(
@@ -61,7 +67,7 @@ bkg_match_addresses <- function(
     )
 
     # Compute Jaro-Winkler scores of the pairs
-    data_edited_compare <- reclin2::compare_pairs(
+    reclin2::compare_pairs(
       data_edited_pairs,
       on = "whole_address",
       default_comparator = dyn_comparator(target_quality, opts),
@@ -71,11 +77,12 @@ bkg_match_addresses <- function(
     weight_i <- max(data_edited_compare$whole_address)
 
     # Select data below threshold using a greedy selection algorithm
-    selection <- reclin2::select_greedy(
-      data_edited_compare,
+    reclin2::select_greedy(
+      data_edited_pairs,
       variable = "threshold",
       score = "whole_address",
-      threshold = target_quality
+      threshold = target_quality,
+      inplace = TRUE
     )
     selection <- selection[selection$threshold]
     

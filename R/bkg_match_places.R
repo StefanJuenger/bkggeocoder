@@ -100,13 +100,15 @@ bkg_match_places <- function(
     data_mun_pairs <- reclin2::pair_blocking(
       data_mun,
       bkg_zip_places,
-      on = c("az_group", "plz_group")
-    )
+      on = c("plz_group"),
+    ) #blocking on?
 
-    data_mun_compare <- reclin2::compare_pairs(
+    reclin2::compare_pairs(
       data_mun_pairs,
       on = c(place, zip_code),
-      default_comparator = dyn_comparator(place_match_quality, opts)
+      minsim = 1,
+      default_comparator = dyn_comparator(place_match_quality, opts),
+      inplace = TRUE
     )
 
     if (isTRUE(verbose)) {
@@ -121,12 +123,12 @@ bkg_match_places <- function(
     fun_env <- environment()
     est <- reclin2::problink_em(
       formula = stats::as.formula(formula_chr, env = fun_env),
-      data = data_mun_compare
+      data = data_mun_pairs
     )
 
-    pred <- stats::predict(
+    stats::predict(
       est,
-      pairs = data_mun_compare,
+      pairs = data_mun_pairs,
       add = TRUE,
       type = "all"
     )
@@ -139,28 +141,29 @@ bkg_match_places <- function(
       )
     }
 
-    sel <- reclin2::select_greedy(
-      pairs = pred,
+    reclin2::select_greedy(
+      pairs = data_mun_pairs,
       variable = "threshold",
       score = "mprob",
-      threshold = place_match_quality
+      threshold = place_match_quality,
+      inplace = TRUE
     )
-    sel <- sel[sel$threshold]
 
     data_mun_real <- reclin2::link(
-      pairs = sel,
+      pairs = data_mun_pairs[data_mun_pairs$threshold],
       all_x = TRUE,
       all_y = FALSE
     )
 
-    data_mun_real <- data.frame(
-      place = data_mun_real[[3L]],
-      zip_code = as.numeric(data_mun_real[[4L]]),
-      place_matched = data_mun_real[[7L]],
-      zip_code_matched = data_mun_real[[8L]]
+    structure(
+      data.frame(
+        data_mun_real[[3L]],
+        as.numeric(data_mun_real[[4L]]),
+        data_mun_real[[7L]],
+        data_mun_real[[8L]]
+      ),
+      names = c(place, zip_code, "place_matched", "zip_code_matched")
     )
-
-    names(data_mun_real)[1L:2L] <- c(place, zip_code)
   })
 
   unmatched_places <- data_mun_real[is.na(data_mun_real$place_matched), ]
