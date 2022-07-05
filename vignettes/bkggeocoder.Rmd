@@ -1,0 +1,180 @@
+---
+title: "Introduction to bkggeocoder"
+author: Jonas Lieth
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to the offline BKG Geocoder}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Introduction
+
+This vignette is intended to give a short introduction to the `bkggeocoder`
+package and its four functions. The bkggeocoder package provides an API
+interface as well as an offline alternative to the [official BKG geocoding web service](https://gdz.bkg.bund.de/index.php/default/webanwendungen/bkg-geocoder.html).
+It is therefore able to turn human-readable addresses into geographic
+information. Since we are making use of data from the German Federal Agency for
+Cartography and Geodesy (or BKG in short), the functions of this package are
+limited to addresses located in German municipalities.
+
+`bkggeocoder` contains two central functions:
+
+* The function `bkg_geocode` taps into the Web Feature Service of the BKG
+geocoding service. It can therefore take advantage of the power of the BKG
+geocoder at the cost of data privacy. Using this function requires access to the
+BKG Geocoding WFS.
+
+* The function `bkg_geocode_offline` also works with encrypted BKG data, however,
+unlike `bkg_geocode`, all geocoding is done offline. While this is approach is
+particularly suitable for working with sensitive address data, it requires
+access to the BKG address dataset and decryption credentials (both provided by
+Stefan Jünger) and may not match the geocoding quality of the original service.
+
+
+## Geocoding
+
+Let us take a look at the key thing of `bkggeocoder`: Geocoding.
+
+### The data
+
+The input data can be controlled using the `data` and `cols` arguments. `data`
+represents the dataframe to be used for geocoding and `cols` specifies which
+columns contain the relevant information. `cols` is generally a length-4 vector
+of either column indices or column names where `cols[1]` stands for the street,
+`cols[2]` stands for the house number, `cols[3]` stands for the zip code and
+`cols[4]` stands for the place name. In some cases, street and house number come
+as a single string, in which case you can also pass a length-3 vector.
+
+For test purposes the package features a dataset of community center addresses
+that will be used to demonstrate what the input data should look like:
+
+```{r setup}
+library(bkggeocoder)
+library(knitr)
+
+data(commaddr)
+kable(head(commaddr[, 2:5]))
+```
+
+This is the standard data structure that is recognized by the geocoding functions.
+Typically, an address dataset contains 3 to 4 columns with clearly separated
+information on street, house number, zip code and place name. In many cases,
+however, address data comes as a pile of greasy character strings. While address
+parsing is a complex issue and R might not be the most suitable language for
+this task, `bkggeocoder` provides a humble parsing function that makes use of
+RegEx magic:
+
+```{r}
+kable(head(commaddr[6]))
+```
+
+
+```{r parsing}
+parsed <- parse_addresses(commaddr, col = 6, join = FALSE)
+kable(head(parsed))
+```
+
+
+### Accessing BKG data
+
+Geocoding requires large amounts of data. Usually, geocoders make use of
+existing online databases like OpenStreetMap, Google Maps or the BKG database.
+If we are going to geocode offline, we need to access that data locally. Data
+access can be controlled using the `data_from_server`, `data_path` and
+`credentials_path` arguments.
+
+Basically, there is only one way to get access to the data: Get in touch with
+Stefan Jünger.
+While it is possible to download the data from the GESIS intranet
+(`data_from_server = TRUE`), you will need credentials to decrypt the acquired
+data. The credentials are a folder containing a public RSA key. The path to it
+needs to be provided using `credentials_path`. If you are not inside the GESIS
+intranet, but do possess the data, you can also provide the BKG data using
+`data_path`.
+
+
+### Controlling the geocoding workflow
+
+The geocoding process consists of two main step: Place matching and address
+matching. Both steps rely on record linkage to link character strings that are
+not necessarily identical, so that `"Limburg an der Lahn"` and
+`"Limburg a.d. Lahn"` have the opportunity to match although they are spelled
+differently.
+
+Place matching tries to narrow down the amount of data we have to
+retrieve from the database. During place matching place names and zip codes from
+the input data are matched against the database and only addresses within places
+that can be successfully matched are loaded into R.
+
+Address matching takes over all addresses within the places identified in 
+place matching. In this step, each address in the input dataset is matched
+against all available addresses inside their zip region.
+
+Both place and address matching can be customized using the `*_quality` and
+`*_opts` arguments. The quality of each geocoding step can be regarded as a
+percentage of how similar two addresses need to be to form a match. The way this
+quality score is calculated depends on the string distance method applied. By
+default, two addresses are compared using the Jaro distance. However, for
+different applications, different string distance measures might be reasonable.
+
+
+### Geocoding output
+
+Using this knowledge about how `bkggeocoder` works, let us go ahead and geocode
+something:
+
+```{r}
+geocoded <- bkg_geocode_offline(
+  data = commaddr[1:100, ],
+  col = 2:5,
+  join_with_original = FALSE,
+  data_from_server = TRUE,
+  credentials_path = "../../bkgcredentials/",
+  verbose = FALSE # turn off progress bars for rmarkdown
+)
+
+geocoded
+```
+
+We can see that all addresses could be successfully geocoded with a mean score
+of 0.993. A quick glimpse over the result confirms that there are no False
+Positives among the matches. But that's no sf dataframe! Where are the precious
+coordinates?
+
+The output is structured as follows:
+
+* `$geocoded` contains an `sf` tibble with all output (and, optionally, input
+data) and their respective geo-locations.
+
+* `$not_geocoded` contains a tibble with addresses that could be
+place-matched but couldn't find their match in address matching
+
+* `$not_place_matched` contains a tibble with addresses that could not be
+place-matched
+
+* `$unmatched_places` contains a tibble with places that could not be matched
+during place matching
+
+* `$call` contains an object of class `call` to `update()` the function call
+
+```{r}
+library(ggplot2)
+
+ger <- rnaturalearth::ne_countries(scale = 10, country = "Germany", returnclass = "sf")
+
+ggplot(data = geocoded$geocoded, aes(color = score)) +
+  geom_sf(data = ger, fill = NA, color = "black") +
+  geom_sf() +
+  labs(title = "How well are these points geocoded?", color = "Score")
+```
+
+
+
