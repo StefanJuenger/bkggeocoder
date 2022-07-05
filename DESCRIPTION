@@ -32,4 +32,9 @@ Imports:
     httr,
     data.table,
     xml2
+Suggests: 
+    rmarkdown,
+    knitr,
+    rnaturalearth
 RoxygenNote: 7.1.2
+VignetteBuilder: knitr

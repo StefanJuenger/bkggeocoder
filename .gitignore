@@ -7,3 +7,4 @@ bkg_data_cache.RData
 bkg_geocode_res.rda
 bkggeocoder.Rproj
 .RDataTmp
+inst/doc

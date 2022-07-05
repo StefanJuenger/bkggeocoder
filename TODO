@@ -1,5 +1,6 @@
 TODO (sorted by relevance):
-- Look into why place matching is so unreliable
+- Look at why address matching sometimes does not match even though the address
+  exists in the database
 - Experiment with OSGTS interface
 - Write vignette
 
@@ -9,3 +10,5 @@ DONE:
 - Include test data (OSM)? -> address dataset of OSM community centers
 - Reduce imports (dplyr, magrittr, glue, readr, stringr, openxlsx)
 - Experiment with different string distance metrics
+- Speed up BKG data I/O (SQL database?) -> No
+- Look into why place matching is so unreliable -> Fixed

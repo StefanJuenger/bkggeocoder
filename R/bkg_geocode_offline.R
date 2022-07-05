@@ -125,11 +125,11 @@ bkg_geocode_offline <- function(
   data,
   cols = 1L:4L,
   data_from_server = FALSE,
-  data_path = "../bkgdata/",
-  credentials_path = "../bkgcredentials/",
+  data_path = "../bkgdata",
+  credentials_path = "../bkgcredentials",
   join_with_original = TRUE,
   crs = 3035L,
-  place_match_quality = 0.9,
+  place_match_quality = 0.8,
   place_match_opts = list(),
   target_quality = 0.9,
   target_opts = list(),
@@ -137,7 +137,7 @@ bkg_geocode_offline <- function(
   force_decrypt = FALSE
 ) {
   stopifnot(is.data.frame(data))
-  # stopifnot(length(cols) == 4L)
+  stopifnot(length(cols) >= 3 && length(cols) <= 4)
   if (isFALSE(data_from_server)) stopifnot(dir.exists(data_path))
   stopifnot(dir.exists(credentials_path))
   stopifnot(is.logical(data_from_server))
@@ -245,7 +245,7 @@ bkg_geocode_offline <- function(
     list(
       geocoded = geocoded_data,
       not_geocoded = geocoded_data_na,
-      not_place_matched = data_edited$data_unmatched,
+      not_place_matched = data_edited$unmatched,
       unmatched_places = data_edited$unmatched_places,
       call = match.call()
     ),
