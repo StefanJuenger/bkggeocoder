@@ -122,7 +122,7 @@
 #' @export
 
 bkg_geocode_offline <- function(
-  data,
+  .data,
   cols = 1L:4L,
   data_from_server = FALSE,
   data_path = "../bkgdata",
@@ -136,18 +136,35 @@ bkg_geocode_offline <- function(
   verbose = TRUE,
   force_decrypt = FALSE
 ) {
-  stopifnot(is.data.frame(data))
-  stopifnot(length(cols) >= 3 && length(cols) <= 4)
-  if (isFALSE(data_from_server)) stopifnot(dir.exists(data_path))
-  stopifnot(dir.exists(credentials_path))
-  stopifnot(is.logical(data_from_server))
-  stopifnot(is.logical(join_with_original))
-  stopifnot(is.numeric(place_match_quality))
-  stopifnot(is.numeric(target_quality))
-  crs_err <- function(e) {
-    cli::cli_abort("{.var crs} must be parsable by {.fn sf::st_crs}")
+  if (!is.data.frame(.data)) {
+    cli::cli_abort("{.var data} must be a dataframe.")
   }
-  tryCatch(expr = sf::st_crs(crs), error = crs_err, warning = crs_err)
+  
+  if (length(cols) < 3 || length(cols) > 4) {
+    cli::cli_abort("{.var cols} must be of length 3 or 4.")
+  }
+  
+  if (isFALSE(data_from_server) && !dir.exists(data_path)) {
+    cli::cli_abort(c(
+      "{.path {data_path}} does not exist.",
+      "i" = "If you are inside the GESIS intranet, consider setting \code{data_from_server = TRUE}."
+    ))
+  }
+  
+  if (!dir.exists(credentials_path)) {
+    cli::cli_abort(paste(
+      "{.var {credentials_path}} does not exist.",
+      "It is needed to decrypt the BKG data."
+    ))
+  }
+  
+  if (place_match_quality > 1 || place_match_quality < 0) {
+    cli::cli_abort("{.var place_match_quality} needs to be a value between 0 and 1.")
+  }
+  
+  if (target_quality > 1 || target_quality < 0) {
+    cli::cli_abort("{.var target_quality} needs to be a value between 0 and 1.")
+  }
 
   if (isTRUE(verbose)) {
     cli::cli_h1("Starting offline geocoding")
@@ -161,13 +178,13 @@ bkg_geocode_offline <- function(
     cli::cli_h2("Subsetting data")
   }
 
-  cols <- names(data[cols])
+  cols <- names(.data[cols])
 
-  data <- cbind(data.frame(.iid = row.names(data)), data)
+  .data <- cbind(data.frame(.iid = row.names(.data)), .data)
 
   # Place Matching ----
   data_edited <- bkg_match_places(
-    data,
+    .data,
     cols,
     data_from_server,
     data_path,
