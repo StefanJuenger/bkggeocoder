@@ -39,49 +39,10 @@ bkg_match_places <- function(
   }
 
   # Acquire place data from BKG ----
-  places_file <- "zip_places/ga_zip_places.csv.encryptr.bin"
+  .crypt <- read_bkg_data("place", NULL, data_from_server, data_path)
 
-  if (isTRUE(data_from_server)) {
-    .crypt <- url(file.path("http://10.6.13.132:8000", places_file, fsep = "/"))
-  } else {
-    .crypt <- file.path(data_path, places_file)
-  }
-
-  .crypt <- tryCatch(
-    expr = readRDS(.crypt),
-    error = function(e) {
-      if (isTRUE(data_from_server)) {
-        cli::cli_abort(c(
-          "Cannot access local server under {.path http://10.6.13.132:8000/}.",
-          "!" = "Verify that you are inside the GESIS intranet or set {.var data_from_server = FALSE}"
-        ))
-      } else {
-        cli::cli_abort("Cannot read place data from {.path {data_path}}")
-      }
-    },
-    warning = function(w) NULL
-  )
-
-  tmp_out_file <- tempfile(pattern = "tmp_out_file", fileext = ".csv")
-
-  .decrypt <- openssl::decrypt_envelope(
-    .crypt$data, .crypt$iv,
-    .crypt$session,
-    key = file.path(credentials_path, "id_rsa"),
-    password = readLines(file.path(credentials_path, "pwd"))
-  )
-
-  writeBin(.decrypt, con = tmp_out_file)
-
-  bkg_zip_places <- data.table::fread(
-    tmp_out_file,
-    colClasses = 'character',
-    encoding = "UTF-8"
-  )
-
+  bkg_zip_places <- fread_encrypted(.crypt, credentials_path)
   names(bkg_zip_places) <- c(place, zip_code)
-
-  unlink(tmp_out_file)
 
   if (isTRUE(verbose)) {
     cli::cli_progress_done()
@@ -101,7 +62,7 @@ bkg_match_places <- function(
       data_mun,
       bkg_zip_places,
       on = c("plz_group"),
-    ) #blocking on?
+    )
 
     reclin2::compare_pairs(
       data_mun_pairs,
@@ -144,7 +105,7 @@ bkg_match_places <- function(
     reclin2::select_greedy(
       pairs = data_mun_pairs,
       variable = "threshold",
-      score = "mprob",
+      score = "mpost",
       threshold = place_match_quality,
       inplace = TRUE
     )
@@ -155,7 +116,7 @@ bkg_match_places <- function(
       all_y = FALSE
     )
 
-    structure(
+    data_mun_real <- structure(
       data.frame(
         data_mun_real[[3L]],
         as.numeric(data_mun_real[[4L]]),
