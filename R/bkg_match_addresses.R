@@ -54,19 +54,18 @@ bkg_match_addresses <- function(
 
   # Match data with BKG data (record linkage) ----
   for (i in 1:nrow(data_edited$matched)) {
-
     if (isTRUE(verbose)) cli::cli_progress_update()
-
     # Create a pairs object with matching places and zip codes
+    within_place <- house_coordinates[
+      place == data_edited$matched[i,]$place_matched &
+        zip_code == data_edited$matched[i,]$zip_code_matched
+    ]
     data_edited_pairs <- reclin2::pair(
       x = data_edited$matched[i, ],
-      y = house_coordinates[
-        place == data_edited$matched[i,]$place_matched &
-          zip_code == data_edited$matched[i,]$zip_code_matched
-      ]
+      y = within_place
     )
 
-    # Compute Jaro-Winkler scores of the pairs
+    # Compute string distance scores of the pairs
     reclin2::compare_pairs(
       data_edited_pairs,
       on = "whole_address",
@@ -74,7 +73,7 @@ bkg_match_addresses <- function(
       inplace = TRUE
     )
 
-    weight_i <- max(data_edited_compare$whole_address)
+    weight_i <- max(data_edited_pairs$whole_address)
 
     # Select data below threshold using a greedy selection algorithm
     reclin2::select_greedy(
@@ -84,19 +83,19 @@ bkg_match_addresses <- function(
       threshold = target_quality,
       inplace = TRUE
     )
-    selection <- selection[selection$threshold]
+    selection <- data_edited_pairs[data_edited_pairs$threshold]
     
     # Use this if you need to inspect the address matching individually:
     # if (!sum(selection$threshold)) print(i)
 
     # Link results with original data
-    joined_data[[i]] <- reclin2::link(
+    data_linked <- reclin2::link(
       selection,
       all_x = TRUE,
       all_y = FALSE
     )
-
-    joined_data[[i]] <- cbind(joined_data[[i]], score = weight_i)
+    
+    joined_data[[i]] <- cbind(data_linked, score = weight_i)
   }
 
   if (isTRUE(verbose)) {
@@ -114,15 +113,9 @@ bkg_match_addresses <- function(
   
   # Fix scores ----
   regex_chr <- "[0-9]+[a-z]*"
-  hn.x <- unlist(regmatches(
-    joined_data$whole_address.x,
-    regexec(regex_chr, joined_data$whole_address.x)
-  ))
-  hn.y <- regmatches(
-    joined_data$whole_address.x,
-    regexec(regex_chr, joined_data$whole_address.y)
-  )
-  hn.y <- sapply(hn.y, function(x) if (!length(x)) NA else x)
+  hn.x <- unlist(match_regex(joined_data$whole_address.x, regex_chr))
+  hn.y <- match_regex(joined_data$whole_address.y, regex_chr)
+  hn.y <- vapply(hn.y, function(x) if (!length(x)) NA_character_ else x, character(1))
   hn_mismatch <- !hn.x == hn.y & !is.na(hn.x) & !is.na(hn.y)
   incorrect_scores <- joined_data$score[hn_mismatch]
   joined_data$score[hn_mismatch] <- incorrect_scores - 0.05
