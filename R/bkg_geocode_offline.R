@@ -147,7 +147,7 @@ bkg_geocode_offline <- function(
   if (isFALSE(data_from_server) && !dir.exists(data_path)) {
     cli::cli_abort(c(
       "{.path {data_path}} does not exist.",
-      "i" = "If you are inside the GESIS intranet, consider setting \code{data_from_server = TRUE}."
+      "i" = "If you are inside the GESIS intranet, consider setting {.code data_from_server = TRUE}."
     ))
   }
   
