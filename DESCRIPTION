@@ -32,7 +32,9 @@ Imports:
     httr,
     data.table,
     xml2
-Suggests: 
+Suggests:
+    openxlsx,
+    readr,
     rmarkdown,
     knitr,
     rnaturalearth
