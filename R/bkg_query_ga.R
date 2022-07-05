@@ -31,7 +31,7 @@ bkg_query_ga <- function(
     )
   }
   
-  c_count <- sum(places %in% gsub("_", "/", dir(cache_dir)))
+  c_count <- 0
   
   # Load address dataset for each unique place ----
   queried_ga <- lapply(places, function(place) {
@@ -43,43 +43,13 @@ bkg_query_ga <- function(
     is_cached <- dataset_name %in% dir(cache_dir)
     cache_file <- file.path(cache_dir, dataset_name)
     if (is_cached && !isTRUE(force)) {
+      c_count <<- c_count + 1
       return(readRDS(cache_file))
     }
     
-    
+    .crypt <- read_bkg_data("address", dataset_name, data_from_server, data_path)
 
-    if(isTRUE(data_from_server)) {
-      .crypt_url <- paste0(
-        "http://10.6.13.132:8000/ga/",
-        utils::URLencode(dataset_name),
-        ".csv.encryptr.bin"
-      )
-      .crypt <- readRDS(url(.crypt_url))
-    } else {
-      .crypt_path <- paste0(data_path, "/ga/", dataset_name, ".csv.encryptr.bin")
-      .crypt <- readRDS(.crypt_path)
-    }
-
-    tmp_out_file <- tempfile(pattern = "tmp_out_file", fileext = ".csv")
-
-    .decrypt <- openssl::decrypt_envelope(
-      .crypt$data, .crypt$iv,
-      .crypt$session,
-      key = paste0(credentials_path, "/id_rsa"),
-      password = readLines(paste0(credentials_path, "/pwd"))
-    )
-    
-    writeBin(.decrypt, con = tmp_out_file)
-
-    i_data <- data.table::fread(
-      tmp_out_file,
-      colClasses = 'character',
-      encoding = "UTF-8"
-    )
-    
-    closeAllConnections()
-
-    unlink(tmp_out_file)
+    i_data <- fread_encrypted(.crypt, credentials_path, drop = "place_add")
     
     saveRDS(i_data, file = cache_file, compress = FALSE)
     
