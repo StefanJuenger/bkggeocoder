@@ -1,7 +1,7 @@
 Package: bkggeocoder
 Type: Package
-Title: R Package for geocoding based on the data of the Federal Agency of 
-    Cartography and Geodesy (BKG) in Germany
+Title: Geocoding based on the data of the Federal Agency of 
+    Cartography and Geodesy (BKG)
 Version: 0.1.0
 Date: 2022-03-11
 Authors@R: c(
