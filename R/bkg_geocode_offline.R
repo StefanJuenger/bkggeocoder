@@ -229,7 +229,7 @@ bkg_geocode_offline <- function(
 
   if (isTRUE(join_with_original)) {
     cleaned_data <- merge(
-      data,
+      .data,
       cleaned_data,
       by = ".iid",
       all.x = TRUE,
