@@ -30,6 +30,8 @@ fread_encrypted <- function(.crypt, credentials_path, ...) {
     text = readBin(.decrypt, what = "character"),
     colClasses = "character",
     encoding = "UTF-8",
+    verbose = FALSE,
+    showProgress = FALSE,
     ...
   )
 }
