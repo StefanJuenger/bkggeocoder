@@ -25,26 +25,35 @@ bkg_geocode_single_address(
 )
 }
 \arguments{
-\item{data}{Dataframe containing address data. The dataframe must contain
-at least four columns carrying the street name, house number, zip code and
-municipality name. The corresponding column names or indices can be specified
-using the \code{cols} argument.}
+\item{data}{\code{[data.frame]}
 
-\item{cols}{Numeric or character of length 4; names or indices of the columns
-containing relevant geocoding information. By default, interprets the
-first four columns as street, house number, zip code and municipality (in
-this order).}
+Dataframe containing address data. The dataframe must contain columns carrying
+the street name, house number, zip code and municipality name. The
+corresponding column names or indices can be specified using the \code{cols}
+argument.}
+
+\item{cols}{\code{[numeric/character]}
+
+Names or indices of the columns containing relevant geocoding information.
+Must be of length 3 or 4. If a length-3 vector is passed, the first column is
+interpreted as a single character string containing street and house number.
+By default, interprets the first four columns as street, house number, zip
+code and municipality (in this order).}
 
 \item{epsg}{Numeric or character string containing an EPSG code for the
 requested CRS.}
 
-\item{join_with_original}{Logical; should the output be joined with the
-input data?}
+\item{join_with_original}{\code{[logical]}
+
+Whether the input data should be joined with the output data. If \code{FALSE},
+input data is discarded. Defaults to \code{TRUE}.}
 
 \item{target_quality}{Numeric; targeted quality. All geocoded addresses with
 scores below this value will be dropped in the output.}
 
-\item{verbose}{Whether to print informative messages and progress bars during
+\item{verbose}{\code{[logical]}
+
+Whether to print informative messages and progress bars during
 the geocoding process.}
 
 \item{street}{Character string for the street name}

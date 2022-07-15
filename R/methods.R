@@ -45,9 +45,7 @@ print.GeocodingResults <- function(
 
 summary.GeocodingResults <- function(object, ...) {
   n_input <- nrow(object$geocoded) + nrow(object$not_geocoded)
-  n_matched <- if (!is.null(object$not_place_matched)) {
-    n_input - nrow(object$not_place_matched)
-  } else NA
+  n_matched <- n_input - nrow(object$not_place_matched)
   n_geocoded <- nrow(object$geocoded)
   n_not_geocoded <- nrow(object$not_geocoded)
   

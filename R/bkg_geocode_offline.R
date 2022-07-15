@@ -3,42 +3,69 @@
 #' @description Geocoding of a multiple addresses using record linkage and an
 #' address/coordinate database (provided by the BKG)
 #'
-#' @param data Dataframe containing address data. The dataframe must contain
-#' at least four columns carrying the street name, house number, zip code and
-#' municipality name. The corresponding column names or indices can be specified
-#' using the \code{cols} argument.
-#' @param cols Numeric or character of length 4; names or indices of the columns
-#' containing relevant geocoding information. By default, interprets the
-#' first four columns as street, house number, zip code and municipality (in
-#' this order).
-#' @param data_from_server Logical; shall the address data be downloaded from
-#' GESIS internal server? Requires access to the GESIS net (default is
-#' \code{FALSE})
-#' @param data_path Path to the address data provided by Stefan Jünger. Ignored
+#' @param .data \code{[data.frame]}
+#' 
+#' Dataframe containing address data. The dataframe must contain columns carrying
+#' the street name, house number, zip code and municipality name. The
+#' corresponding column names or indices can be specified using the \code{cols}
+#' argument.
+#' @param cols \code{[numeric/character]}
+#' 
+#' Names or indices of the columns containing relevant geocoding information.
+#' Must be of length 3 or 4. If a length-3 vector is passed, the first column is
+#' interpreted as a single character string containing street and house number.
+#' By default, interprets the first four columns as street, house number, zip
+#' code and municipality (in this order).
+#' @param data_from_server \code{[logical]}
+#' 
+#' Whether the address data should be downloaded from GESIS internal server?
+#' Requires access to the GESIS net. Defaults to \code{FALSE}.
+#' @param data_path \code{[character]}
+#' 
+#' Path to the address data provided by Stefan Jünger. Ignored
 #' if \code{data_from_server = TRUE}.
-#' @param credentials_path Path to credentials package provided by Stefan Jünger
-#' @param join_with_original Logical; should the output be joined with the
-#' input data?
-#' @param crs Any kind of object that can be parsed by \code{\link[sf]{st_crs}}
+#' @param credentials_path \code{[character]}
+#' 
+#' Path to credentials package provided by Stefan Jünger.
+#' @param join_with_original \code{[logical]}
+#' 
+#' Whether the input data should be joined with the output data. If \code{FALSE},
+#' input data is discarded. Defaults to \code{TRUE}.
+#' @param crs \code{[various]}
+#' 
+#' Any kind of object that can be parsed by \code{\link[sf]{st_crs}}
 #' that the output data should be transformed to (e.g. EPSG code, WKT/PROJ4
 #' character string or object of class \code{crs}). Defaults to EPSG:3035.
-#' @param place_match_quality Numeric; targeted quality of first record linkage
-#' round (see details). Corresponds to the threshold value of
-#' \code{\link[reclin2:select_n_to_m]{reclin::select_greedy()}}.
-#' @param place_match_opts Named list; further parameters to customize the first
+#' @param place_match_quality \code{[numeric]}
+#' 
+#' Targeted quality of second record linkage round (see details). Corresponds to
+#' the (standardized) string metric that can be specified using
+#' \code{target_opts} AND the posterior m-probability that is used to determine
+#' a match during record linkage.
+#' @param place_match_opts \code{[list]}
+#' 
+#' Named list that holds further parameters to customize the first
 #' round of record linkage. All list elements are passed as arguments to
 #' \code{\link[stringdist]{stringdist}}. Possible values are \code{method},
 #' \code{weight}, \code{q}, \code{p}, and \code{bt}.
-#' @param target_quality Numeric; targeted quality of second record linkage
-#' round (see details). Corresponds to the threshold value of
-#' \code{\link[reclin2:select_n_to_m]{reclin::select_greedy()}}.
-#' @param target_opts Named list; further parameters to customize the second
+#' @param target_quality \code{[numeric]}
+#' 
+#' Targeted quality of second record linkage round (see details). Corresponds to
+#' the (standardized) string metric that can be specified using
+#' \code{target_opts}.
+#' @param target_opts \code{[list]}
+#' 
+#' Named list that holds further parameters to customize the second
 #' round of record linkage. All list elements are passed as arguments to
 #' \code{\link[stringdist]{stringdist}}. Possible values are \code{method},
 #' \code{weight}, \code{q}, \code{p}, and \code{bt}.
-#' @param verbose Whether to print informative messages and progress bars during
+#' @param verbose \code{[logical]}
+#' 
+#' Whether to print informative messages and progress bars during
 #' the geocoding process.
-#' @param force_decrypt Whether to force the function to read in the encrypted
+#' @param force_decrypt \code{[logical]}
+#' 
+#' Whether to force the function to read in the encrypted
 #' files. This can be useful, if the BKG data should not be stored locally for
 #' too long or if the cached data are corrupt or outdated.
 #'
@@ -115,6 +142,27 @@
 #'
 #' @references van der Loo, M. P. J. (2014). The stringdist Package for
 #' Approximate String Matching. The R Journal, 6(1), 111–122. https://doi.org/10.32614/RJ-2014-011
+#'
+#' @examples 
+#' data(commaddr, package = "bkggeocoder")
+#' 
+#' # Basic call with lower quality thresholds
+#' gc <- bkg_geocode_offline(commaddr, cols = 2:5, place_match_quality = 0.7, target_quality = 0.7)
+#'
+#' # Geocoding with different string metrics for address matching
+#' gc <- bkg_geocode_offline(commaddr, cols = 2:5, target_opts = list(method = "lv", weight = c(2, 2, 4)))
+#' 
+#' # Geocoding results are transformed to geographic coordinates
+#' gc <- bkg_geocode_offline(commaddr, cols = 2:5, crs = 4314)
+#' 
+#' # `cols` argument depends on where the relevant address information is stored
+#' commaddr <- commaddr[, 1:4]
+#' gc <- bkg_geocode_offline(commaddr, cols = 1:4)
+#' 
+#' # If `cols` is of length 3, street and house_number are assumed to be in a
+#' # single string
+#' commaddr[, "addr.street"] <- paste(commaddr[["addr.street"]], commaddr[["addr.housenumber"]])
+#' gc <- bkg_geocode_offline(commaddr, cols = c("addr.street", "addr.postcode", "addr.city"))
 #'
 #' @encoding UTF-8
 #' @md
@@ -229,7 +277,7 @@ bkg_geocode_offline <- function(
 
   if (isTRUE(join_with_original)) {
     cleaned_data <- merge(
-      data,
+      .data,
       cleaned_data,
       by = ".iid",
       all.x = TRUE,
