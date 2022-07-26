@@ -119,7 +119,7 @@ bkg_match_places <- function(
     data_mun_real <- structure(
       data.frame(
         data_mun_real[[3L]],
-        as.numeric(data_mun_real[[4L]]),
+        data_mun_real[[4L]],
         data_mun_real[[7L]],
         data_mun_real[[8L]]
       ),
