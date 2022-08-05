@@ -12,6 +12,14 @@ bkg_match_addresses <- function(
   place <- ifelse(length(cols) == 4, cols[4], cols[3])
 
   # Prepare data ----
+  if (verbose) {
+    cli::cli_progress_step(
+      msg = "Preparing data for address matching...",
+      msg_done = "Prepared data for address matching.",
+      msg_failed = "Could not prepare data for address matching."
+    )
+  }
+  
   # Fix Mannheim square addresses
   data_edited$matched[, street] <- gsub(
     "^([A-Z])([1-9])$", "\\1 \\2",

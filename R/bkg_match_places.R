@@ -123,23 +123,13 @@ bkg_match_places <- function(
     data_mun_real <- structure(
       data.frame(
         data_mun_real[[3L]],
-        as.numeric(data_mun_real[[4L]]),
+        data_mun_real[[4L]],
         data_mun_real[[7L]],
         data_mun_real[[8L]]
       ),
       names = c(place, zip_code, "place_matched", "zip_code_matched")
     )
   })
-
-  unmatched_places <- data_mun_real[is.na(data_mun_real$place_matched), ]
-  n_unmatched <- nrow(unmatched_places)
-
-  if (isTRUE(verbose)) {
-    if (n_unmatched) {
-      cli::cli_inform(c("!" = "WARNING: {.val {n_unmatched}} place{?s} left unmatched."))
-    }
-    cli::cli_progress_done()
-  }
 
   # Combine with input ----
   data_matched <- merge(
@@ -152,8 +142,16 @@ bkg_match_places <- function(
 
   data_matched <- unique(data_matched[!is.na(data_matched$place_matched), ])
   data_unmatched <- data[!data$.iid %in% data_matched$.iid, ]
+  unmatched_places <- data_unmatched[, c(zip_code, place)]
+  unmatched_places <- unmatched_places[!duplicated(unmatched_places), ]
+  rownames(unmatched_places) <- NULL
 
   if (isTRUE(verbose)) {
+    cli::cli_progress_done()
+    n_unmatched <- nrow(unmatched_places)
+    if (n_unmatched) {
+      cli::cli_inform(c("!" = "WARNING: {.val {n_unmatched}} place{?s} left unmatched."))
+    }
     if (nrow(data_unmatched) && !nrow(data_matched)) {
       cli::cli_abort("No address could be matched with any place. Check your input!")
     } else if (!nrow(data_unmatched) && nrow(data_matched)) {

@@ -62,6 +62,13 @@ bkg_query_ga <- function(
   })
   
   # Clean data ----
+  if (verbose) {
+    cli::cli_progress_step(
+      msg = "Cleaning BKG data...",
+      msg_done = "Cleaned BKG data.",
+      msg_failed = "Could not clean BKG data."
+    )
+  }
   queried_ga <- data.table::rbindlist(queried_ga)
 
   place <- whole_address <- RS <- x <- y <- NULL
