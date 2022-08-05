@@ -5,7 +5,7 @@
 \name{bkggeocoder-package}
 \alias{bkggeocoder}
 \alias{bkggeocoder-package}
-\title{bkggeocoder: R Package for geocoding based on the data of the Federal Agency of Cartography and Geodesy (BKG) in Germany}
+\title{bkggeocoder: Geocoding based on the data of the Federal Agency of Cartography and Geodesy (BKG)}
 \description{
 R Package for geocoding based on the data of the Federal Agency of Cartography and Geodesy (BKG) in Germany. The functions of this package require access to the BKG address datasets (gdz_geokodierung_* or wfs_geokodierung_*).
 }

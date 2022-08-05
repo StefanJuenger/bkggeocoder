@@ -156,7 +156,7 @@
 #' gc <- bkg_geocode_offline(commaddr, cols = 2:5, crs = 4314)
 #' 
 #' # `cols` argument depends on where the relevant address information is stored
-#' commaddr <- commaddr[, 1:4]
+#' commaddr <- commaddr[, 2:5]
 #' gc <- bkg_geocode_offline(commaddr, cols = 1:4)
 #' 
 #' # If `cols` is of length 3, street and house_number are assumed to be in a
