@@ -47,13 +47,18 @@ bkg_query_ga <- function(
       return(readRDS(cache_file))
     }
     
-    .crypt <- read_bkg_data("address", dataset_name, data_from_server, data_path)
-
-    i_data <- fread_encrypted(.crypt, credentials_path, drop = "place_add")
+    place_data <- bkg_read(
+      dataset_name,
+      what = "addresses",
+      data_from_server = data_from_server,
+      data_path = data_path,
+      credentials_path = credentials_path,
+      drop = "place_add"
+    )
     
-    saveRDS(i_data, file = cache_file, compress = FALSE)
+    saveRDS(place_data, file = cache_file, compress = FALSE)
     
-    i_data
+    place_data
   })
   
   # Clean data ----

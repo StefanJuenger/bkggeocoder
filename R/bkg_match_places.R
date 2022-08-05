@@ -39,9 +39,13 @@ bkg_match_places <- function(
   }
 
   # Acquire place data from BKG ----
-  .crypt <- read_bkg_data("place", NULL, data_from_server, data_path)
+  bkg_zip_places <- bkg_read(
+    what = "places",
+    data_from_server = data_from_server,
+    data_path = data_path,
+    credentials_path = credentials_path
+  )
 
-  bkg_zip_places <- fread_encrypted(.crypt, credentials_path)
   names(bkg_zip_places) <- c(place, zip_code)
 
   if (isTRUE(verbose)) {
