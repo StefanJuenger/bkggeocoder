@@ -37,6 +37,7 @@ fread_encrypted <- function(.crypt, credentials_path, ...) {
 #' Type of dataset to be read. If \code{"places"}, reads a dataset
 #' containing all names and zip codes of German places. If \code{"addresses"}
 #' reads in all addresses of a place specified in \code{"place"}.
+#' @param ... Further arguments passed to \code{\link[data.table]{fread}}
 #' @inheritParams bkg_geocode_offline
 #' 
 #' @returns A data.table containing either names and zip codes of German

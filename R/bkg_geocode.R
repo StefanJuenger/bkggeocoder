@@ -72,7 +72,7 @@ bkg_geocode <- function (
       cli::cli_progress_update(.envir = parent.frame(2))
     }
     
-    res <- bkg_geocode_single_address(
+    res <- bkg_geocode_single(
       street = data[[cols[1]]][i],
       house_number = data[[cols[2]]][i],
       zip_code = data[[cols[3]]][i],

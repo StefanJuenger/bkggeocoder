@@ -33,7 +33,7 @@ spt_create_inspire_ids <- function(
   )
 
   if (isTRUE(combine)) {
-    inspire_ids <- cbind(data, data.frame(id_name= inspire_ids))
+    inspire_ids <- cbind(data, data.frame(id_name = inspire_ids))
     names(inspire_ids)[names(inspire_ids) == "id_name"] <- id_name
   } else {
     inspire_ids

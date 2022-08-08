@@ -19,9 +19,14 @@ print.GeocodingResults <- function(
   if (!which %in% names(x) && attr(x, "type") == "bkg") {
     cli::cli_abort("{.code which = {which}} is not applicable for BKG geocoding results.")
   }
-  indices <- c("score", "address_input", "address_output")
+  indices <- list(
+    geocoded = c("score", "address_input", "address_output"),
+    not_geocoded = c("score", "address_input", "address_output"),
+    not_place_matched = colnames(x[["not_placed_matched"]]),
+    unmatched_places = colnames(x[["unmatched_places"]])
+  )
   
-  printed_df <- x[[which]][indices]
+  printed_df <- x[[which]][indices[[which]]]
   
   if (inherits(printed_df, "sf")) {
     printed_df <- sf::st_drop_geometry(printed_df)

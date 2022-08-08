@@ -15,7 +15,7 @@ bkg_geocode_offline(
   crs = 3035L,
   place_match_quality = 0.8,
   place_match_opts = list(),
-  target_quality = 0.9,
+  target_quality = 0.8,
   target_opts = list(),
   verbose = TRUE,
   force_decrypt = FALSE

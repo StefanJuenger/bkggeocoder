@@ -9,7 +9,8 @@ bkg_read(
   what = "addresses",
   data_from_server = FALSE,
   data_path = "../bkgdata",
-  credentials_path = "../bkgcredentials"
+  credentials_path = "../bkgcredentials",
+  ...
 )
 }
 \arguments{
@@ -21,9 +22,8 @@ Name of the place to be read and decrypted, e.g.,
 \item{what}{\code{[character]}
 
 Type of dataset to be read. If \code{"places"}, reads a dataset
-containing all place names and zip codes of German districts. If
-\code{"addresses"} reads in all addresses of a place specified in
-\code{"place"}.}
+containing all names and zip codes of German places. If \code{"addresses"}
+reads in all addresses of a place specified in \code{"place"}.}
 
 \item{data_from_server}{\code{[logical]}
 
@@ -38,14 +38,16 @@ if \code{data_from_server = TRUE}.}
 \item{credentials_path}{\code{[character]}
 
 Path to credentials package provided by Stefan Jünger.}
+
+\item{...}{Further arguments passed to \code{\link[data.table]{fread}}}
 }
 \value{
-A data.table containing either place names and zip codes of German
-districts or full addresses for an individual district specified in
+A data.table containing either names and zip codes of German
+districts or full addresses of an individual place specified in
 \code{what}.
 }
 \description{
 Read and decrypt BKG datasets. This includes both address
 datasets for individual places as well as a dataset containing place names
-and zip codes (depending on the \code{what} argument).
+and their zip codes (depending on the \code{what} argument).
 }

@@ -1,7 +1,5 @@
 TODO (sorted by relevance):
-- Look at why address matching sometimes does not match even though the address
-  exists in the database
-- Experiment with OSGTS interface
+- Create a bkg_reverse function
 - Write vignette
 
 DONE:
@@ -12,3 +10,6 @@ DONE:
 - Experiment with different string distance metrics
 - Speed up BKG data I/O (SQL database?) -> No
 - Look into why place matching is so unreliable -> Fixed
+- Fix zip code matching for cases with leading 0s
+- Fix print method
+- Experiment with OSGTS interface

@@ -121,7 +121,7 @@ bkg_match_places <- function(
     )
 
     data_mun_real <- structure(
-      data.frame(
+      tibble::tibble(
         data_mun_real[[3L]],
         data_mun_real[[4L]],
         data_mun_real[[7L]],
