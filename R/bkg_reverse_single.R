@@ -39,7 +39,7 @@ bkg_reverse_single <- function(location = NULL, poly = NULL, epsg = NULL, count 
   } else args$epsg
   
   # Create POST body ----
-  if (interface == "wfs") {
+  if (identical(interface, "wfs")) {
     cli::cli_warn(paste(
       "{.fun bkg_reverse_single} currently only works with",
       "{.code interface = \"osgts\"}."

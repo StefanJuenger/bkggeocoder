@@ -3,20 +3,42 @@
 #' Geocoding of single or multiple addresses using the BKG geocoding WFS
 #' interface (\code{wfs_geokodierung_bund}).
 #'
-#' @param epsg Numeric or character string containing an EPSG code for the
-#' requested CRS.
-#' @param target_quality Numeric; targeted quality. All geocoded addresses with
-#' scores below this value will be dropped in the output.
+#' @param .data \code{[data.frame]}
+#' 
+#' For \code{bkg_geocode}, a dataframe containing address data. The dataframe
+#' must contain either a single column carrying a query string or between one
+#' and five columns containing the street name, house number, zip code,
+#' municipality name and district. The corresponding column names or indices can
+#' be specified using the \code{cols} argument.
+#' @param cols \code{[numeric/character]}
+#' 
+#' Names or indices of the columns containing relevant geocoding information.
+#' Must be between length 1 and 5. If \code{structured = FALSE}, a length-1
+#' vector is expected which holds a vector of query strings. Otherwise, expects
+#' a length-1 to 5 vector holding structured information. \code{cols} interprets
+#' the first five columns as street, house number, zip code, municipality and
+#' district (in this order). To provide, for example, only a place, you may fill
+#' the remaining column indices with \code{NA}, like so:
+#' \code{c(NA, NA, NA, "place")}
+#' @param epsg \code{[numeric/character]}
+#' 
+#' Numeric or character string containing an EPSG code for the requested CRS.
+#' @param target_quality \code{[numeric]}
+#' 
+#' Targeted quality of the geocoding result. Only results are returned that
+#' lie above this threshold. Note that unstructured
+#' @param ... Further arguments passed to
+#' \code{\link[bkggeocoder]{bkg_geocode_single}} or
+#' \code{\link[bkggeocoder]{bkg_reverse_single}}
 #' @inheritParams bkg_geocode_offline
 #'
-#' @return \code{bkg_geocode}r eturns a nested list of class GeocodingResults
+#' @return \code{bkg_geocode} returns a nested list of class GeocodingResults
 #' containing an \code{sf} dataframe of the geocoding results (\code{$geocoded})
 #' and a dataframe with addresses with non-matched places (\code{$not_geocoded}).
 #' Since the BKG geocoder does not need to subset the data using place matching,
 #' the output does not contain dataframes on unmatched places like in
-#' \code{\link{bkg_geocode_offline}}. The object also includes a call object and
-#' descriptive summary statistics. Please note that original columns
-#' retrieve the suffix \code{"_input"}.
+#' \code{\link{bkg_geocode_offline}}. The object also includes a call object.
+#' Please note that original columns retrieve the suffix \code{"_input"}.
 #'
 #' @examples
 #'
@@ -34,29 +56,25 @@
 #' @encoding UTF-8
 #'
 #' @export
-
 bkg_geocode <- function (
-  data,
+  .data,
   cols = 1L:4L,
   epsg = 3035,
+  ...,
   join_with_original = FALSE,
-  target_quality = 0.9,
+  target_quality = NULL,
   verbose = TRUE
 ) {
-  cols <- names(data[cols])
+  cols <- names(.data[cols])
     
-  if (!length(data)) {
-    cli::cli_abort(paste(
-      "Either {.var data} or the alternative arguments {.var street},",
-      "{.var house_number}, {.var zip_code} and {.var place} must be",
-      "specified."
-    ))
+  if (!length(.data[cols])) {
+    cli::cli_abort("The provided column indices are invalid.")
   }
     
   if (isTRUE(verbose)) {
     cli::cli_progress_bar(
       name = "Geocoding addresses",
-      total = nrow(data),
+      total = nrow(.data),
       format = paste(
         "{cli::pb_name} {cli::pb_bar} {cli::pb_current}/{cli::pb_total} |",
         "ETA {cli::pb_eta}"
@@ -65,9 +83,9 @@ bkg_geocode <- function (
     )
   }
   
-  data <- cbind(data.frame(.iid = row.names(data)), data)
+  .data <- cbind(data.frame(.iid = row.names(.data)), .data)
   
-  geocoded_data <- lapply(1:nrow(data), function(i) {
+  geocoded_data <- lapply(1:nrow(.data), function(i) {
     if (isTRUE(verbose)) {
       cli::cli_progress_update(.envir = parent.frame(2))
     }
@@ -77,7 +95,9 @@ bkg_geocode <- function (
       house_number = data[[cols[2]]][i],
       zip_code = data[[cols[3]]][i],
       place = data[[cols[4]]][i],
-      epsg = epsg
+      district = data[[cols[5]]][i],
+      epsg = epsg,
+      ...
     )
 
     res$.iid <- i
@@ -89,7 +109,7 @@ bkg_geocode <- function (
   
   if (isTRUE(join_with_original)) {
     geocoded_data <- merge(
-      data,
+      .data,
       geocoded_data,
       by = ".iid",
       all.x = TRUE,

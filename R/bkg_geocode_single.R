@@ -159,10 +159,10 @@
 #' rand_poly <- sf::st_convex_hull(rand_poly)
 #' 
 #' # Reverse geocoding using a random polygon
-#' bkg_reverse_single(poly = poly, epsg = 3035)
+#' bkg_reverse_single(poly = rand_poly, epsg = 3035)
 #' 
 #' # Reverse geocoding using a random point geometry
-#' bkg_reverse_single(rand_points[1,], epsg = 3035, count = 20)
+#' bkg_reverse_single(rand_points[1], epsg = 3035, count = 20)
 #' }
 #' 
 #' @export
@@ -375,7 +375,7 @@ clean_geocode <- function(.data, query, street, house_number, zip_code, place) {
       spt_create_inspire_ids(.data, type = "1km")
     } else NA,
     source = "\u00a9 GeoBasis-DE / BKG, Deutsche Post Direkt GmbH, Statistisches Bundesamt, Wiesbaden (2021)",
-    .after = "score"
+    .after = 0
   )
 
   if (has_attrib("hit")) {
