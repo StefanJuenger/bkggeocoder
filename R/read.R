@@ -85,16 +85,3 @@ bkg_read <- function(
 
   fread_encrypted(.crypt, credentials_path, ...)
 }
-
-
-#' Simpler wrapper for regexec and regmatches
-#' 
-#' @param x A character vector to be matched.
-#' @param pattern Regex expression or term to be looked up in x
-#' @param ... Further arguments passed to regexec.
-#' 
-#' @noRd
-match_regex <- function(x, pattern, ...) {
-  matches <- regexec(pattern, x, ...)
-  regmatches(x, matches)
-}
