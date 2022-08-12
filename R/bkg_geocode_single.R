@@ -329,7 +329,7 @@ clean_geocode <- function(.data, query, street, house_number, zip_code, place) {
     strasse = "street", haus = "house_number", plz = "zip_code", ort = "place",
     ortsteil = "district", gemeinde = "municipality", verwgem = "verwgem",
     kreis = "county", regbezirk = "gov_district", bundesland = "state",
-    schluessel = "schluessel", rs = "RS", GEM = "GEM", KRS = "KRS", RBZ = "RBZ",
+    schluessel = "schluessel", GEM = "RS", GEM = "GEM", KRS = "KRS", RBZ = "RBZ",
     STA = "STA", ags = "AGS", GITTER_ID_100m = "GITTER_ID_100m",
     GITTER_ID_1km = "GITTER_ID_1km", source = "source", bbox = "bbox",
     geometry = "geometry"
@@ -364,10 +364,10 @@ clean_geocode <- function(.data, query, street, house_number, zip_code, place) {
       query
     } else NA,
     address_output = if (length(addrout)) addrout else NA,
-    GEM = if (has_attrib("rs")) substr(.data$rs, 1, 9) else NA,
-    KRS = if (has_attrib("rs")) substr(.data$rs, 1, 5) else NA,
-    RBZ = if (has_attrib("rs")) substr(.data$rs, 1, 3) else NA,
-    STA = if (has_attrib("rs")) substr(.data$rs, 1, 2) else NA,
+    VWG = if (has_attrib("GEM")) substr(.data$rs, 1, 9) else NA,
+    KRS = if (has_attrib("GEM")) substr(.data$rs, 1, 5) else NA,
+    RBZ = if (has_attrib("GEM")) substr(.data$rs, 1, 3) else NA,
+    STA = if (has_attrib("GEM")) substr(.data$rs, 1, 2) else NA,
     GITTER_ID_100m = if (inherits(.data, "sf")) {
       spt_create_inspire_ids(.data, type = "100m")
     } else NA,
