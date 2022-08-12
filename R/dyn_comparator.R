@@ -17,6 +17,10 @@ dyn_comparator <- function(threshold, opts) {
       if (is.null(opts$p)) opts$p <- 0
       if (is.null(opts$bt)) opts$bt <- 0
       
+      if (opts$method == "hamming") {
+        cli::cli_abort("The Hamming distance is not supported for geocoding.")
+      }
+      
       d <- stringdist::stringdist(
         a = tolower(x),
         b = tolower(y),
@@ -31,8 +35,6 @@ dyn_comparator <- function(threshold, opts) {
         d / (nchar(x) + nchar(y))
       } else if (opts$method %in% c("lv", "dl")) {
         d / max(nchar(x), nchar(y))
-      } else if (opts$method == "hamming") {
-        d / nchar(x)
       } else if (opts$method == "qgram") {
         d / (nchar(x) + nchar(y) - 2 * opts$q - 2)
       } else d
