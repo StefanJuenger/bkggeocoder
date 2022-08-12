@@ -18,8 +18,8 @@ dyn_comparator <- function(threshold, opts) {
       if (is.null(opts$bt)) opts$bt <- 0
       
       d <- stringdist::stringdist(
-        a = x,
-        b = y,
+        a = tolower(x),
+        b = tolower(y),
         method = opts$method,
         weight = opts$weight,
         q = opts$q,
