@@ -67,7 +67,8 @@ character string or object of class \code{crs}). Defaults to EPSG:3035.}
 Targeted quality of second record linkage round (see details). Corresponds to
 the (standardized) string metric that can be specified using
 \code{target_opts} AND the posterior m-probability that is used to determine
-a match during record linkage.}
+a match during record linkage. Values of 1 are interpreted as \code{1 - 5e-8}
+because reclin2 does not support scores that equal 1.}
 
 \item{place_match_opts}{\code{[list]}
 
@@ -80,7 +81,8 @@ round of record linkage. All list elements are passed as arguments to
 
 Targeted quality of second record linkage round (see details). Corresponds to
 the (standardized) string metric that can be specified using
-\code{target_opts}.}
+\code{target_opts}. Values of 1 are interpreted as \code{1 - 5e-8}
+because reclin2 does not support scores that equal 1.}
 
 \item{target_opts}{\code{[list]}
 

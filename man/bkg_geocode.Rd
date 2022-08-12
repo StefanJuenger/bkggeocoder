@@ -34,10 +34,13 @@ correspond to the allowed geometry types in
 \item{cols}{\code{[numeric/character]}
 
 Names or indices of the columns containing relevant geocoding information.
-Must be of length 3 or 4. If a length-3 vector is passed, the first column is
-interpreted as a single character string containing street and house number.
-By default, interprets the first four columns as street, house number, zip
-code and municipality (in this order).}
+Must be between length 1 and 5. If \code{structured = FALSE}, a length-1
+vector is expected which holds a vector of query strings. Otherwise, expects
+a length-1 to 5 vector holding structured information. \code{cols} interprets
+the first five columns as street, house number, zip code, municipality and
+district (in this order). To provide, for example, only a place, you may fill
+the remaining column indices with \code{NA}, like so:
+\code{c(NA, NA, NA, "place")}}
 
 \item{epsg}{\code{[numeric/character]}
 
