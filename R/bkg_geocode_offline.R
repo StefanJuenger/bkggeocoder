@@ -41,7 +41,8 @@
 #' Targeted quality of second record linkage round (see details). Corresponds to
 #' the (standardized) string metric that can be specified using
 #' \code{target_opts} AND the posterior m-probability that is used to determine
-#' a match during record linkage.
+#' a match during record linkage. Values of 1 are interpreted as \code{1 - 5e-8}
+#' because reclin2 does not support scores that equal 1.
 #' @param place_match_opts \code{[list]}
 #' 
 #' Named list that holds further parameters to customize the first
@@ -52,7 +53,8 @@
 #' 
 #' Targeted quality of second record linkage round (see details). Corresponds to
 #' the (standardized) string metric that can be specified using
-#' \code{target_opts}.
+#' \code{target_opts}. Values of 1 are interpreted as \code{1 - 5e-8}
+#' because reclin2 does not support scores that equal 1.
 #' @param target_opts \code{[list]}
 #' 
 #' Named list that holds further parameters to customize the second
@@ -168,7 +170,6 @@
 #' @md
 #'
 #' @export
-
 bkg_geocode_offline <- function(
   .data,
   cols = 1L:4L,
@@ -184,6 +185,7 @@ bkg_geocode_offline <- function(
   verbose = TRUE,
   force_decrypt = FALSE
 ) {
+  
   if (!is.data.frame(.data)) {
     cli::cli_abort("{.var data} must be a dataframe.")
   }
@@ -218,7 +220,7 @@ bkg_geocode_offline <- function(
     cli::cli_h1("Starting offline geocoding")
     cli::cat_line()
     cli::cli_inform(c(
-      "i" = "Number of distinct addresses: {.val {nrow(data)}}",
+      "i" = "Number of distinct addresses: {.val {nrow(.data)}}",
       "i" = "Targeted quality of place-matching: {.val {place_match_quality}}",
       "i" = "Targeted quality of geocoding: {.val {target_quality}}")
     )
@@ -227,6 +229,9 @@ bkg_geocode_offline <- function(
   }
 
   cols <- names(.data[cols])
+  
+  args <- as.list(environment())
+  args$.data <- NULL
 
   .data <- cbind(data.frame(.iid = row.names(.data)), .data)
 
@@ -315,7 +320,8 @@ bkg_geocode_offline <- function(
       call = match.call()
     ),
     type = "offline",
-    class = c("GeocodingResults", "list")
+    args = args,
+    class = c("geocoding_results")
   )
 
   output_list

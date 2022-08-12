@@ -17,6 +17,8 @@ bkg_reverse <- function(
   location <- geometry <- NULL
   geom_type <- unique(sf::st_geometry_type(.data))
   
+  args <- as.list(environment())
+  
   if (length(geom_type) > 1) {
     cli::cli_abort("Only datasets with a single geometry type can be reverse geocoded.")
   }
@@ -84,10 +86,10 @@ bkg_reverse <- function(
       reversed = reversed_data,
       call = match.call()
     ),
-    type = "bkg_reverse"
+    type = "bkg_reverse",
+    args = args,
+    class = "reverse_results"
   )
-  
-  class(output_list) <- c("ReverseResults", class(output_list))
   
   output_list
 }

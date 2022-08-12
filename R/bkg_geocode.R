@@ -66,6 +66,9 @@ bkg_geocode <- function (
   verbose = TRUE
 ) {
   cols <- names(.data[cols])
+  
+  args <- as.list(environment())
+  args$.data <- NULL
     
   if (!length(.data[cols])) {
     cli::cli_abort("The provided column indices are invalid.")
@@ -137,10 +140,10 @@ bkg_geocode <- function (
       not_geocoded = geocoded_data_na,
       call = match.call()
     ),
-    type = "bkg"
+    type = "bkg",
+    args = args,
+    class = "geocoding_results"
   )
-  
-  class(output_list) <- c("GeocodingResults", class(output_list))
   
   output_list
 }

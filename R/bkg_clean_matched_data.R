@@ -61,7 +61,7 @@ bkg_clean_matched_addresses <- function(
     not_so_messy_data_sf,
     Gitter_ID_1km = spt_create_inspire_ids(data = not_so_messy_data_sf, type = "1km"),
     Gitter_ID_100m = spt_create_inspire_ids(data = not_so_messy_data_sf, type = "100m"),
-    .before = 18
+    .before = ncol(not_so_messy_data_sf)
   )
 
   if (isTRUE(verbose)) {

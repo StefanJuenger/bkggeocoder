@@ -9,7 +9,7 @@
 #'
 #' @export
 
-print.GeocodingResults <- function(
+print.geocoding_results <- function(
   x,
   which = c("geocoded", "not_geocoded", "not_place_matched", "unmatched_places"),
   ...
@@ -48,7 +48,7 @@ print.GeocodingResults <- function(
 #'
 #' @export
 
-summary.GeocodingResults <- function(object, ...) {
+summary.geocoding_results <- function(object, ...) {
   n_input <- nrow(object$geocoded) + nrow(object$not_geocoded)
   n_matched <- n_input - nrow(object$not_place_matched)
   n_geocoded <- nrow(object$geocoded)
@@ -78,7 +78,7 @@ summary.GeocodingResults <- function(object, ...) {
 #'
 #' @export
 
-plot.GeocodingResults <- function(x, ...) {
+plot.geocoding_results <- function(x, ...) {
   graphics::hist(
     x$geocoded$score,
     main = "Distribution of geocoding scores",
@@ -86,4 +86,12 @@ plot.GeocodingResults <- function(x, ...) {
     xlim = c(0, 1),
     ...
   )
+}
+
+
+#' @export
+plot.state_dist <- function(x, ylim = 0.94, ...) {
+  par(mar=c(8,4,4,0))
+  bar <- barplot(count ~ state, data = x, ylim = c(ylim, 1), xpd = FALSE, xaxt = "n", xlab = "")
+  text(cex = 1, x = bar, y = par("usr")[3] - 0.002, labels = t2$state, xpd = TRUE, srt = 45, pos = 2)
 }
