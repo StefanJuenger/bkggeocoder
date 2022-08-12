@@ -39,6 +39,10 @@ bkg_match_addresses <- function(
       paste0(" ", data_edited$matched[[house_number]])
     }
   ))
+  
+  if (target_quality == 1L) {
+    target_quality <- 1L - 5e-8
+  }
 
   # Prepare BKG data ----
   house_coordinates$whole_address <- trimws(paste0(

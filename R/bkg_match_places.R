@@ -6,7 +6,7 @@
 #' @noRd
 
 bkg_match_places <- function(
-  data,
+  .data,
   cols,
   data_from_server,
   data_path,
@@ -17,15 +17,19 @@ bkg_match_places <- function(
 ) {
   place <- ifelse(length(cols) == 4, cols[4], cols[3])
   zip_code <- ifelse(length(cols) == 4, cols[3], cols[2])
+  
+  if (place_match_quality == 1L) {
+    place_match_quality <- 1L - -5e-8
+  }
 
   # Prepare place data ----
-  data_mun <- unique(data[c(place, zip_code)])
-  data_mun[, zip_code] <- vapply(data_mun[, zip_code], function(zip) {
+  .data[, zip_code] <- vapply(.data[, zip_code], function(zip) {
     zip <- as.character(zip)
     if (nchar(zip) == 4) {
       paste0(0, zip)
     } else zip
   }, FUN.VALUE = character(1))
+  data_mun <- unique(.data[c(place, zip_code)])
   data_mun$az_group <- substr(data_mun[, place], 1, 3)
   data_mun$plz_group <- substr(data_mun[, zip_code], 1, 6)
 
@@ -133,7 +137,7 @@ bkg_match_places <- function(
 
   # Combine with input ----
   data_matched <- merge(
-    data,
+    .data,
     data_mun_real,
     by = c(place, zip_code),
     all.x = TRUE,
@@ -141,7 +145,7 @@ bkg_match_places <- function(
   )
 
   data_matched <- unique(data_matched[!is.na(data_matched$place_matched), ])
-  data_unmatched <- data[!data$.iid %in% data_matched$.iid, ]
+  data_unmatched <- .data[!.data$.iid %in% data_matched$.iid, ]
   unmatched_places <- data_unmatched[, c(zip_code, place)]
   unmatched_places <- unmatched_places[!duplicated(unmatched_places), ]
   rownames(unmatched_places) <- NULL
