@@ -12,7 +12,14 @@
 #' query parameters for structured or unstructured geocoding.
 #' 
 #' @export
-bkg_reverse_single <- function(location = NULL, poly = NULL, epsg = NULL, count = 1, ...) {
+bkg_reverse_single <- function(
+  location = NULL,
+  poly = NULL,
+  radius = 1000L,
+  epsg = NULL,
+  count = 1,
+  ...
+) {
   # Prepare arguments ----
   # Construct a list of arguments that is ordered like in bkg_geocode_single
   dep_args <- formals(bkg_geocode_single)
@@ -31,7 +38,9 @@ bkg_reverse_single <- function(location = NULL, poly = NULL, epsg = NULL, count 
 
   # Replace arguments that are provided for in this function
   interface <- args$interface
+  clean <- args$clean
   args[["interface"]] <- NULL
+  args[["clean"]] <- NULL
   args["focus_point"] <- list(location)
   args["geometry"] <- list(poly)
   args[["epsg"]] <- if (is.null(args$epsg)) {
@@ -45,7 +54,7 @@ bkg_reverse_single <- function(location = NULL, poly = NULL, epsg = NULL, count 
       "{.code interface = \"osgts\"}."
     ))
   }
-  
+
   req <- do.call(osgts_request, unname(args))
   
   # Perform request ----
@@ -54,6 +63,9 @@ bkg_reverse_single <- function(location = NULL, poly = NULL, epsg = NULL, count 
   res_sf <- sf::read_sf(res_text)
   
   # Clean data ----
-  res_sf <- clean_geocode(res_sf, NULL, NULL, NULL, NULL, NULL)
+  if (clean) {
+    res_sf <- clean_geocode(res_sf, NULL, NULL, NULL, NULL, NULL)
+  }
+  
   sf::st_as_sf(res_sf)
 }
