@@ -2,7 +2,6 @@ bkg_match_addresses <- function(
   data_edited,
   cols,
   house_coordinates,
-  target_quality,
   opts,
   verbose
 ) {
@@ -10,6 +9,8 @@ bkg_match_addresses <- function(
   house_number <- ifelse(length(cols) == 4, cols[2], "")
   zip_code <- ifelse(length(cols) == 4, cols[3], cols[2])
   place <- ifelse(length(cols) == 4, cols[4], cols[3])
+  
+  data_edited$matched <- data_edited$matched[seq_len(ncol(data_edited$matched) - 1)]
 
   # Prepare data ----
   if (verbose) {
@@ -40,10 +41,6 @@ bkg_match_addresses <- function(
     }
   ))
   
-  if (target_quality == 1L) {
-    target_quality <- 1L - 5e-8
-  }
-
   # Prepare BKG data ----
   house_coordinates$whole_address <- trimws(paste0(
     house_coordinates$street, " ", house_coordinates$house_number,
@@ -92,13 +89,10 @@ bkg_match_addresses <- function(
       data_edited_pairs,
       variable = "threshold",
       score = "whole_address",
-      threshold = target_quality,
+      threshold = 0,
       inplace = TRUE
     )
     selection <- data_edited_pairs[data_edited_pairs$threshold]
-    
-    # Use this if you need to inspect the address matching individually:
-    # if (!sum(selection$threshold)) print(i)
 
     # Link results with original data
     data_linked <- reclin2::link(
