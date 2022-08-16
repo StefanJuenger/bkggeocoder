@@ -1,17 +1,14 @@
 #' @rdname bkg_geocode
 #' 
-#' @param .data For \code{bkg_reverse}, .data is expected to be an \code{sf}
-#' data.frame containing geometries of a single geometry type. Geometry types
-#' correspond to the allowed geometry types in
-#' \code{\link[bkggeocoder]{bkg_reverse_single}}
-#' 
 #' @export
 bkg_reverse <- function(
   .data,
   epsg = 3035,
+  radius = 1000L,
   target_quality = NULL,
   ...,
   join_with_original = FALSE,
+  identifiers = "rs",
   verbose = TRUE
 ) {
   location <- geometry <- NULL
@@ -33,6 +30,8 @@ bkg_reverse <- function(
     .data <- sf::st_as_sf(.data)
   }
   
+  .data <- cbind(data.frame(.iid = row.names(.data)), .data)
+  
   if (isTRUE(verbose)) {
     cli::cli_progress_bar(
       name = "Geocoding addresses",
@@ -53,9 +52,11 @@ bkg_reverse <- function(
     res <- bkg_reverse_single(
       location[i],
       geometry[i],
+      radius = radius,
       epsg = epsg,
       count = 1,
       minscore = target_quality,
+      clean = FALSE,
       ...
     )
     
@@ -65,7 +66,8 @@ bkg_reverse <- function(
   
   reversed_data <- rbind_list(reversed_data)
   reversed_data <- sf::st_sf(reversed_data, crs = epsg, sf_column_name = "geometry")
-  
+  reversed_data <- clean_geocode(reversed_data, NULL, NULL, NULL, NULL, NULL, identifiers)
+
   if (isTRUE(join_with_original)) {
     reversed_data <- merge(
       .data,
@@ -78,17 +80,25 @@ bkg_reverse <- function(
     reversed_data <- sf::st_as_sf(tibble::as_tibble(reversed_data))
   }
   
+  missing <- setdiff(as.numeric(row.names(.data)), reversed_data$.iid)
+  
+  if (length(missing)) {
+    not_reversed <- .data[missing, ]
+  }
+  
   # Remove internal identifier
   reversed_data$.iid <- NULL
+  not_reversed$.iid <- NULL
   
   output_list <- structure(
     list(
       reversed = reversed_data,
+      not_reversed = not_reversed,
       call = match.call()
     ),
-    type = "bkg_reverse",
+    type = "bkg",
     args = args,
-    class = "reverse_results"
+    class = "ReverseResults"
   )
   
   output_list
