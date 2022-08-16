@@ -75,7 +75,6 @@ bkg_match_places <- function(
     reclin2::compare_pairs(
       data_mun_pairs,
       on = c(place, zip_code),
-      minsim = 1,
       default_comparator = dyn_comparator(place_match_quality, opts),
       inplace = TRUE
     )
@@ -114,9 +113,18 @@ bkg_match_places <- function(
       pairs = data_mun_pairs,
       variable = "threshold",
       score = "mpost",
-      threshold = place_match_quality,
+      threshold = 0,
       inplace = TRUE
     )
+    
+    # Sometimes select_greedy is not greedy enough and leaves out some values
+    fix_greedy <- \(x, score) if (!sum(x)) max(score) == score else x
+
+    data_mun_pairs$threshold <- data_mun_pairs[,
+      .(threshold = fix_greedy(threshold, mpost)), by = ".x"
+    ][["threshold"]]
+
+    scores <- data_mun_pairs[data_mun_pairs$threshold, c(".x", "mpost")]
 
     data_mun_real <- reclin2::link(
       pairs = data_mun_pairs[data_mun_pairs$threshold],
@@ -124,19 +132,22 @@ bkg_match_places <- function(
       all_y = FALSE
     )
 
+    data_mun_real <- merge(data_mun_real, scores, by = ".x")
+
     data_mun_real <- structure(
       tibble::tibble(
-        data_mun_real[[3L]],
-        data_mun_real[[4L]],
-        data_mun_real[[7L]],
-        data_mun_real[[8L]]
+        data_mun_real[[paste0(place, ".x")]],
+        data_mun_real[[paste0(zip_code, ".x")]],
+        data_mun_real[[paste0(place, ".y")]],
+        data_mun_real[[paste0(zip_code, ".y")]],
+        data_mun_real[["mpost"]]
       ),
-      names = c(place, zip_code, "place_matched", "zip_code_matched")
+      names = c(place, zip_code, "place_matched", "zip_code_matched", "score")
     )
   })
 
   # Combine with input ----
-  data_matched <- merge(
+  data_mun_real <- merge(
     .data,
     data_mun_real,
     by = c(place, zip_code),
@@ -144,8 +155,9 @@ bkg_match_places <- function(
     sort = FALSE
   )
 
-  data_matched <- unique(data_matched[!is.na(data_matched$place_matched), ])
-  data_unmatched <- .data[!.data$.iid %in% data_matched$.iid, ]
+  # Format matched data
+  data_matched <- data_mun_real[data_mun_real$score >= place_match_quality, ]
+  data_unmatched <- data_mun_real[data_mun_real$score < place_match_quality, ]
   unmatched_places <- data_unmatched[, c(zip_code, place)]
   unmatched_places <- unmatched_places[!duplicated(unmatched_places), ]
   rownames(unmatched_places) <- NULL
