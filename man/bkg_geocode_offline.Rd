@@ -13,6 +13,7 @@ bkg_geocode_offline(
   credentials_path = "../bkgcredentials",
   join_with_original = TRUE,
   crs = 3035L,
+  identifiers = "rs",
   place_match_quality = 0.8,
   place_match_opts = list(),
   target_quality = 0.8,
@@ -62,6 +63,16 @@ Any kind of object that can be parsed by \code{\link[sf]{st_crs}}
 that the output data should be transformed to (e.g. EPSG code, WKT/PROJ4
 character string or object of class \code{crs}). Defaults to EPSG:3035.}
 
+\item{identifiers}{\code{[character/logical]}
+
+Territorial identifiers to be included in the output. Can be one or several
+of \code{"rs"}, \code{"nuts"} and \code{"inspire"}. \code{"rs"}
+is short for Regionalschlüssel and includes all variations of the
+official municipality key of Germany. \code{"nuts"} includes all NUTS codes
+from NUTS-1 to NUTS-3. \code{"inspire"} includes identifiers for the 100m
+and 1km INSPIRE grids. If \code{TRUE}, includes all of the aforementioned
+identifiers.}
+
 \item{place_match_quality}{\code{[numeric]}
 
 Targeted quality of second record linkage round (see details). Corresponds to
@@ -81,8 +92,7 @@ round of record linkage. All list elements are passed as arguments to
 
 Targeted quality of second record linkage round (see details). Corresponds to
 the (standardized) string metric that can be specified using
-\code{target_opts}. Values of 1 are interpreted as \code{1 - 5e-8}
-because reclin2 does not support scores that equal 1.}
+\code{target_opts}.}
 
 \item{target_opts}{\code{[list]}
 
@@ -158,8 +168,7 @@ Longest Common String   \tab 0.9182 \tab 0.3668 \tab 0.9948 \tab 0.0198\cr
 Levenshtein             \tab 0.9145 \tab 0.3408 \tab 0.9952 \tab 0.0191\cr
 Damerau-Levenshtein     \tab 0.9145 \tab 0.3408 \tab 0.9952 \tab 0.0192\cr
 Q-gram                  \tab 0.9129 \tab 0.3339 \tab 0.9951 \tab 0.0195\cr
-Jaccard                 \tab 0.8976 \tab 0.1779 \tab 0.9931 \tab 0.0226\cr
-Hamming                 \tab 0.8866 \tab 0.2711 \tab 0.9969 \tab 0.0157
+Jaccard                 \tab 0.8976 \tab 0.1779 \tab 0.9931 \tab 0.0226
 }
 However, keep in mind that this was tested on a clean dataset without many
 spelling errors and without setting weights or penalties. Different metrics

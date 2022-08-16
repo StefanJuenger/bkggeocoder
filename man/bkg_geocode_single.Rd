@@ -25,10 +25,18 @@ bkg_geocode_single(
   minscore = NULL,
   maxscore = NULL,
   allscores = FALSE,
+  clean = TRUE,
   interface = c("osgts", "wfs")
 )
 
-bkg_reverse_single(location = NULL, poly = NULL, epsg = NULL, count = 1, ...)
+bkg_reverse_single(
+  location = NULL,
+  poly = NULL,
+  radius = 1000L,
+  epsg = NULL,
+  count = 1,
+  ...
+)
 }
 \arguments{
 \item{query}{\code{[character]}
@@ -105,6 +113,11 @@ below or above these thresholds are not included in the output.}
 Whether to return the lowest level of granularity for the geocoding scores.
 If \code{TRUE}, returns scores for all address components. Otherwise, only
 returns a single score for the whole result.}
+
+\item{clean}{\code{[logical]}
+
+Whether to clean up the output or provide it as it is returned by the
+BKG service.}
 
 \item{interface}{\code{[character]}
 

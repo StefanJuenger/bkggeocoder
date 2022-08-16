@@ -4,21 +4,24 @@
 \name{bkg_geocode}
 \alias{bkg_geocode}
 \alias{bkg_reverse}
-\title{BKG geocoding interface}
+\title{BKG batch (reverse) geocoding}
 \usage{
 bkg_geocode(
   .data,
-  cols = 1L:4L,
+  cols = 1L,
   epsg = 3035,
   ...,
+  structured = TRUE,
   join_with_original = FALSE,
-  target_quality = NULL,
+  identifiers = "rs",
+  target_quality = 0.9,
   verbose = TRUE
 )
 
 bkg_reverse(
   .data,
   epsg = 3035,
+  radius = 1000L,
   target_quality = NULL,
   ...,
   join_with_original = FALSE,
@@ -26,21 +29,23 @@ bkg_reverse(
 )
 }
 \arguments{
-\item{.data}{For \code{bkg_reverse}, .data is expected to be an \code{sf}
-data.frame containing geometries of a single geometry type. Geometry types
-correspond to the allowed geometry types in
-\code{\link[bkggeocoder]{bkg_reverse_single}}}
+\item{.data}{\code{[data.frame]}
+
+For \code{bkg_geocode}, a dataframe containing address data. The dataframe
+must all columns specified with the \code{cols} argument. For
+\code{bkg_reverse}, .data is expected to be an \code{sf} data.frame
+containing geometries of a single geometry type. Geometry types correspond to
+the allowed geometry types in \code{\link[bkggeocoder]{bkg_reverse_single}}.}
 
 \item{cols}{\code{[numeric/character]}
 
 Names or indices of the columns containing relevant geocoding information.
-Must be between length 1 and 5. If \code{structured = FALSE}, a length-1
-vector is expected which holds a vector of query strings. Otherwise, expects
-a length-1 to 5 vector holding structured information. \code{cols} interprets
-the first five columns as street, house number, zip code, municipality and
-district (in this order). To provide, for example, only a place, you may fill
-the remaining column indices with \code{NA}, like so:
-\code{c(NA, NA, NA, "place")}}
+Must be of length 3 or 4. If a length-3 vector is passed, the first column is
+interpreted as a single character string containing street and house number.
+By default, interprets the first four columns as street, house number, zip
+code and municipality (in this order).
+If \code{structured = FALSE}, only one column is accepted which holds query
+strings for unstructured geocoding.}
 
 \item{epsg}{\code{[numeric/character]}
 
@@ -50,15 +55,36 @@ Numeric or character string containing an EPSG code for the requested CRS.}
 \code{\link[bkggeocoder]{bkg_geocode_single}} or
 \code{\link[bkggeocoder]{bkg_reverse_single}}}
 
+\item{structured}{\code{[logical]}
+
+If \code{TRUE}, activates structured geocoding. Structured geocoding accepts
+up to six columns describing different elements of an address. If
+\code{FALSE}, activates unstructured geocoding. Unstructured geocoding
+accepts only a single column containing an address string (and, optionally,
+query operators as described in
+\code{\link[bkggeocoder]{bkg_geocode_single}}). Generally, structured
+geocoding is the safer option, but unstructured geocoding offers much more
+flexibility and requires less data preparation.}
+
 \item{join_with_original}{\code{[logical]}
 
 Whether the input data should be joined with the output data. If \code{FALSE},
 input data is discarded. Defaults to \code{TRUE}.}
 
+\item{identifiers}{\code{[character/logical]}
+
+Territorial identifiers to be included in the output. Can be one or several
+of \code{"rs"}, \code{"nuts"} and \code{"inspire"}. \code{"rs"}
+is short for Regionalschlüssel and includes all variations of the
+official municipality key of Germany. \code{"nuts"} includes all NUTS codes
+from NUTS-1 to NUTS-3. \code{"inspire"} includes identifiers for the 100m
+and 1km INSPIRE grids. If \code{TRUE}, includes all of the aforementioned
+identifiers.}
+
 \item{target_quality}{\code{[numeric]}
 
 Targeted quality of the geocoding result. Only results are returned that
-lie above this threshold. Note that unstructured}
+lie above this threshold.}
 
 \item{verbose}{\code{[logical]}
 
@@ -75,8 +101,10 @@ the output does not contain dataframes on unmatched places like in
 Please note that original columns retrieve the suffix \code{"_input"}.
 }
 \description{
-Geocoding of single or multiple addresses using the BKG geocoding WFS
-interface (\code{wfs_geokodierung_bund}).
+\code{bkg_geocode} provides an interface for geocoding dataframes holding
+structured or unstructured address data. \code{bkg_geocode} finds addresses
+that can be associated to a dataframe of input geometries. Both functions
+require access to the \code{gdz_geokodierung} endpoint of the BKG.
 }
 \examples{
 
