@@ -342,6 +342,10 @@ clean_geocode <- function(.data, query, street, house_number, zip_code, place, i
     GITTER_ID_1km = "GITTER_ID_1km", source = "source", bbox = "bbox",
     .iid = ".iid", geometry = "geometry"
   )
+  
+  if (isTRUE(identifiers)) {
+    identifiers <- c("rs", "nuts", "inspire")
+  }
 
   # Change colnames if necessary
   colnames(.data) <- vapply(colnames(.data), function(nam) alt_names[[nam]], character(1))
