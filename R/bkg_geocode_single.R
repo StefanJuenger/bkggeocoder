@@ -212,7 +212,7 @@ bkg_geocode_single <- function(
   
   # Clean data ----
   if (clean) {
-    res_sf <- clean_geocode(res_sf, query, street, house_number, zip_code, place)
+    res_sf <- clean_geocode(res_sf, query, street, house_number, zip_code, place, TRUE)
   }
   
   sf::st_as_sf(res_sf)

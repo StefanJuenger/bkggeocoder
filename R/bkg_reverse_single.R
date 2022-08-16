@@ -63,8 +63,8 @@ bkg_reverse_single <- function(
   res_sf <- sf::read_sf(res_text)
   
   # Clean data ----
-  if (clean) {
-    res_sf <- clean_geocode(res_sf, NULL, NULL, NULL, NULL, NULL)
+  if (!isFALSE(clean)) {
+    res_sf <- clean_geocode(res_sf, NULL, NULL, NULL, NULL, NULL, TRUE)
   }
   
   sf::st_as_sf(res_sf)
