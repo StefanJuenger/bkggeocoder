@@ -9,7 +9,7 @@
 #'
 #' @export
 
-print.geocoding_results <- function(
+print.GeocodingResults <- function(
   x,
   which = c("geocoded", "not_geocoded", "not_place_matched", "unmatched_places"),
   ...
@@ -48,7 +48,7 @@ print.geocoding_results <- function(
 #'
 #' @export
 
-summary.geocoding_results <- function(object, ...) {
+summary.GeocodingResults <- function(object, ...) {
   n_input <- nrow(object$geocoded) + nrow(object$not_geocoded)
   n_matched <- n_input - nrow(object$not_place_matched)
   n_geocoded <- nrow(object$geocoded)
@@ -78,7 +78,7 @@ summary.geocoding_results <- function(object, ...) {
 #'
 #' @export
 
-plot.geocoding_results <- function(x, ...) {
+plot.GeocodingResults <- function(x, ...) {
   graphics::hist(
     x$geocoded$score,
     main = "Distribution of geocoding scores",
@@ -94,4 +94,18 @@ plot.state_dist <- function(x, ylim = 0.94, ...) {
   par(mar=c(8,4,4,0))
   bar <- barplot(count ~ state, data = x, ylim = c(ylim, 1), xpd = FALSE, xaxt = "n", xlab = "")
   text(cex = 1, x = bar, y = par("usr")[3] - 0.002, labels = t2$state, xpd = TRUE, srt = 45, pos = 2)
+}
+
+
+#' @export
+plot.ReverseResults <- function(x, ...) {
+  n_input <- nrow(x[["reversed"]]) + nrow(x[["not_reversed"]])
+  printed_df <- x[["reversed"]][c("score", "address_output")]
+  
+  cat("Class:", strrep(" ", 5), "ReverseResults", "\n")
+  cat("Reversed:   ", nrow(x$reversed), "/", n_input, "\n")
+  cat("Mean score: ", round(mean(x$reversed$score), 3), "\n")
+  cat("Type:", strrep(" ", 6), attr(x, "type"), "\n\n")
+  
+  print(printed_df, ...)
 }
