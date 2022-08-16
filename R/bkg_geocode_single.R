@@ -73,6 +73,10 @@
 #' Whether to return the lowest level of granularity for the geocoding scores.
 #' If \code{TRUE}, returns scores for all address components. Otherwise, only
 #' returns a single score for the whole result.
+#' @param clean \code{[logical]}
+#' 
+#' Whether to clean up the output or provide it as it is returned by the
+#' BKG service.
 #' 
 #' @param interface \code{[character]}
 #' 
@@ -186,10 +190,12 @@ bkg_geocode_single <- function(
   minscore = NULL,
   maxscore = NULL,
   allscores = FALSE,
+  clean = TRUE,
   interface = c("osgts", "wfs")
 ) {
   args <- as.list(environment())
   args$interface <- NULL
+  args$clean <- NULL
   interface <- match.arg(interface)
 
   # Create POST body ----
@@ -205,7 +211,10 @@ bkg_geocode_single <- function(
   res_sf <- sf::read_sf(res_text)
   
   # Clean data ----
-  res_sf <- clean_geocode(res_sf, query, street, house_number, zip_code, place)
+  if (clean) {
+    res_sf <- clean_geocode(res_sf, query, street, house_number, zip_code, place)
+  }
+  
   sf::st_as_sf(res_sf)
 }
 
@@ -216,11 +225,9 @@ osgts_request <- function(
   maxScore, allScore, ...
 ) {
   args <- as.list(environment())
-  
+
   if (elen <- ...length()) {
-    ellipsis <- list(...)
-    enam <- names(ellipsis)
-    cli::cli_warn("{elen} argument{?s} are not supported by the OSGTS interface: {enam}")
+    cli::cli_warn("{elen} argument{?s} {?is/are} not supported by the OSGTS interface.")
   }
   
   if (!is.null(srsName)) {
@@ -318,7 +325,7 @@ wfs_request <- function(street, house_number, zip_code, place, max_features, eps
 }
 
 
-clean_geocode <- function(.data, query, street, house_number, zip_code, place) {
+clean_geocode <- function(.data, query, street, house_number, zip_code, place, identifiers) {
   alt_names <- list(
     score = "score", address_input = "address_input", 
     address_output = "address_output", id = "id", text = "text", typ = "type",
@@ -329,10 +336,11 @@ clean_geocode <- function(.data, query, street, house_number, zip_code, place) {
     strasse = "street", haus = "house_number", plz = "zip_code", ort = "place",
     ortsteil = "district", gemeinde = "municipality", verwgem = "verwgem",
     kreis = "county", regbezirk = "gov_district", bundesland = "state",
-    schluessel = "schluessel", GEM = "RS", GEM = "GEM", KRS = "KRS", RBZ = "RBZ",
-    STA = "STA", ags = "AGS", GITTER_ID_100m = "GITTER_ID_100m",
+    schluessel = "schluessel", rs = "RS", ags = "AGS", VWG = "VWG", KRS = "KRS",
+    RBZ = "RBZ", STA = "STA", ags = "AGS", nuts1 = "nuts1", nuts2 = "nuts2",
+    nuts3 = "nuts3", GITTER_ID_100m = "GITTER_ID_100m",
     GITTER_ID_1km = "GITTER_ID_1km", source = "source", bbox = "bbox",
-    geometry = "geometry"
+    .iid = ".iid", geometry = "geometry"
   )
 
   # Change colnames if necessary
@@ -345,7 +353,12 @@ clean_geocode <- function(.data, query, street, house_number, zip_code, place) {
   }
 
   # Construct input and output addresses
-  addrin <- trimws(paste(street, house_number, zip_code, place))
+  addrin <- gsub("\\s+", " ", trimws(paste(
+    street,
+    house_number,
+    zip_code,
+    place)
+  ))
   addrout <- vapply(seq_len(nrow(.data)), function(i) {
     trimws(gsub("\\s+", " ", paste(
       if (has_attrib("street", i)) .data$street[i] else "",
@@ -354,6 +367,15 @@ clean_geocode <- function(.data, query, street, house_number, zip_code, place) {
       if (has_attrib("place", i)) .data$place[i] else ""
     )))
   }, character(1))
+  
+  VWG <- if (has_attrib("RS")) substr(.data$RS, 1, 9) else NA
+  KRS <- if (has_attrib("RS")) substr(.data$RS, 1, 5) else NA
+  RBZ <- if (has_attrib("RS")) substr(.data$RS, 1, 3) else NA
+  STA <- if (has_attrib("RS")) substr(.data$RS, 1, 2) else NA
+  
+  nuts <- if (has_attrib("RS")) {
+    merge(data.frame(KRS = KRS), nuts_ars, by = "KRS", all.x = TRUE)$nuts
+  }
 
   # Add modified data
   .data <- tibble::add_column(
@@ -364,10 +386,8 @@ clean_geocode <- function(.data, query, street, house_number, zip_code, place) {
       query
     } else NA,
     address_output = if (length(addrout)) addrout else NA,
-    VWG = if (has_attrib("GEM")) substr(.data$rs, 1, 9) else NA,
-    KRS = if (has_attrib("GEM")) substr(.data$rs, 1, 5) else NA,
-    RBZ = if (has_attrib("GEM")) substr(.data$rs, 1, 3) else NA,
-    STA = if (has_attrib("GEM")) substr(.data$rs, 1, 2) else NA,
+    VWG = VWG, KRS = KRS, RBZ = RBZ, STA = STA,
+    nuts3 = nuts, nuts2 = substr(nuts, 1, 4), nuts1 = substr(nuts, 1, 3),
     GITTER_ID_100m = if (inherits(.data, "sf")) {
       spt_create_inspire_ids(.data, type = "100m")
     } else NA,
@@ -388,6 +408,16 @@ clean_geocode <- function(.data, query, street, house_number, zip_code, place) {
       sf::st_geometry(sf::read_sf(bbox, crs = sf::st_crs(.data)))
     }))
     .data$bbox <- do.call(c, .data$bbox)
+  }
+  
+  if (!"rs" %in% identifiers) {
+    .data[c("RS", "AGS", "KRS", "RBZ", "VWG", "STA")] <- NULL
+  }
+  if (!"nuts" %in% identifiers) {
+    .data[grepl("nuts", names(.data))] <- NULL
+  }
+  if (!"inspire" %in% identifiers) {
+    .data[grepl("GITTER", names(.data))] <- NULL
   }
 
   # Order columns based on the alt_names list order
