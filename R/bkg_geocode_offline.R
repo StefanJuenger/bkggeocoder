@@ -36,6 +36,15 @@
 #' Any kind of object that can be parsed by \code{\link[sf]{st_crs}}
 #' that the output data should be transformed to (e.g. EPSG code, WKT/PROJ4
 #' character string or object of class \code{crs}). Defaults to EPSG:3035.
+#' @param identifiers \code{[character/logical]}
+#' 
+#' Territorial identifiers to be included in the output. Can be one or several
+#' of \code{"rs"}, \code{"nuts"} and \code{"inspire"}. \code{"rs"}
+#' is short for Regionalschlüssel and includes all variations of the
+#' official municipality key of Germany. \code{"nuts"} includes all NUTS codes
+#' from NUTS-1 to NUTS-3. \code{"inspire"} includes identifiers for the 100m
+#' and 1km INSPIRE grids. If \code{TRUE}, includes all of the aforementioned
+#' identifiers.
 #' @param place_match_quality \code{[numeric]}
 #' 
 #' Targeted quality of second record linkage round (see details). Corresponds to
@@ -53,8 +62,7 @@
 #' 
 #' Targeted quality of second record linkage round (see details). Corresponds to
 #' the (standardized) string metric that can be specified using
-#' \code{target_opts}. Values of 1 are interpreted as \code{1 - 5e-8}
-#' because reclin2 does not support scores that equal 1.
+#' \code{target_opts}.
 #' @param target_opts \code{[list]}
 #' 
 #' Named list that holds further parameters to customize the second
@@ -121,8 +129,7 @@
 #'   Levenshtein             \tab 0.9145 \tab 0.3408 \tab 0.9952 \tab 0.0191\cr
 #'   Damerau-Levenshtein     \tab 0.9145 \tab 0.3408 \tab 0.9952 \tab 0.0192\cr
 #'   Q-gram                  \tab 0.9129 \tab 0.3339 \tab 0.9951 \tab 0.0195\cr
-#'   Jaccard                 \tab 0.8976 \tab 0.1779 \tab 0.9931 \tab 0.0226\cr
-#'   Hamming                 \tab 0.8866 \tab 0.2711 \tab 0.9969 \tab 0.0157
+#'   Jaccard                 \tab 0.8976 \tab 0.1779 \tab 0.9931 \tab 0.0226
 #' }
 #' However, keep in mind that this was tested on a clean dataset without many
 #' spelling errors and without setting weights or penalties. Different metrics
@@ -178,6 +185,7 @@ bkg_geocode_offline <- function(
   credentials_path = "../bkgcredentials",
   join_with_original = TRUE,
   crs = 3035L,
+  identifiers = "rs",
   place_match_quality = 0.8,
   place_match_opts = list(),
   target_quality = 0.8,
@@ -237,7 +245,7 @@ bkg_geocode_offline <- function(
 
   # Place Matching ----
   data_edited <- bkg_match_places(
-    .data,
+    .data[c(".iid", cols)],
     cols,
     data_from_server,
     data_path,
@@ -250,11 +258,11 @@ bkg_geocode_offline <- function(
   # Querying Database ----
   house_coordinates <- bkg_query_ga(
     unique(data_edited$matched$place_matched),
-    data_from_server,
-    data_path,
-    credentials_path,
-    verbose,
-    force_decrypt
+    data_from_server = data_from_server,
+    data_path = data_path,
+    credentials_path = credentials_path,
+    verbose = verbose,
+    force = force_decrypt
   )
 
   data.table::setkeyv(house_coordinates, c("zip_code", "place"))
@@ -266,18 +274,18 @@ bkg_geocode_offline <- function(
 
   messy_geocoded_data <- bkg_match_addresses(
     data_edited,
-    cols,
-    house_coordinates,
-    target_quality,
-    target_opts,
-    verbose
+    cols = cols,
+    house_coordinates = house_coordinates,
+    opts = target_opts,
+    verbose = verbose
   )
 
   # Data Cleaning ----
   cleaned_data <- bkg_clean_matched_addresses(
     messy_geocoded_data,
-    cols,
-    verbose
+    cols = cols,
+    identifiers = identifiers,
+    verbose = verbose
   )
 
   if (isTRUE(join_with_original)) {
@@ -286,7 +294,8 @@ bkg_geocode_offline <- function(
       cleaned_data,
       by = ".iid",
       all.x = TRUE,
-      sort = TRUE
+      sort = TRUE,
+      suffixes = c("", "_input")
     )
 
     # Remove all '_input' variables since they are already in the original to be
@@ -308,8 +317,9 @@ bkg_geocode_offline <- function(
   }
 
   # Create Output ----
-  geocoded_data    <- cleaned_data[!is.na(cleaned_data$RS), ]
-  geocoded_data_na <- cleaned_data[is.na(cleaned_data$RS), ]
+  geocoded_data    <- cleaned_data[which(cleaned_data$score >= target_quality), ]
+  geocoded_data_na <- cleaned_data[which(cleaned_data$score <  target_quality), ]
+  data_edited$unmatched <- subset(data_edited$unmatched, select = -.iid)
 
   output_list <- structure(
     list(
@@ -321,7 +331,7 @@ bkg_geocode_offline <- function(
     ),
     type = "offline",
     args = args,
-    class = c("geocoding_results")
+    class = c("GeocodingResults")
   )
 
   output_list
