@@ -29,8 +29,9 @@ bkg_match_addresses <- function(
   
   # Expand Str. to Straße
   data_edited_fixed_street <- gsub(
-    "tr[.]", "tra\u00dfe",
-    data_edited$matched[[street]]
+    "str[\\.]?\\s", "stra\u00dfe ",
+    data_edited$matched[[street]],
+    ignore.case = TRUE
   )
   
   # Create address string
