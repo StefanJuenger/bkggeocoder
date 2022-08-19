@@ -290,10 +290,10 @@ bkg_geocode_offline <- function(
 
   if (isTRUE(join_with_original)) {
     cleaned_data <- merge(
-      .data,
       cleaned_data,
+      .data,
       by = ".iid",
-      all.x = TRUE,
+      all.y = TRUE,
       sort = TRUE,
       suffixes = c("", "_input")
     )
