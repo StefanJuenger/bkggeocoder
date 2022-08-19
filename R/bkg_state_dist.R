@@ -18,33 +18,11 @@ bkg_state_dist <- function(.data) {
     }, FUN.VALUE = character(1))
   }
   
-  by <- c("Plz")
-  names(by) <- zip_col
-  
-  .data_states <- merge(
+  merge(
     sf::st_drop_geometry(rbind(.data$geocoded, .data$not_geocoded)),
     zips[!duplicated(zips$Plz), ],
     by.x = zip_col,
     by.y = "Plz",
     all.x = TRUE
-  )
-  
-  geocoded <- .data_states[!is.na(.data_states$score), ]
-  
-  state_geocoded <- table(
-    geocoded$Bundesland,
-    rep("count", nrow(geocoded))
-  )
-  state_all <- table(
-    state = .data_states$Bundesland,
-    rep("count", nrow(.data_states))
-  )
-  
-  structure(
-    tibble::tibble(
-      state = rownames(state_all),
-      count = c(state_geocoded) / c(state_all)
-    ),
-    class = c("state_dist", "tbl_df", "tbl", "data.frame")
   )
 }

@@ -89,13 +89,6 @@ plot.GeocodingResults <- function(x, ...) {
 }
 
 
-#' @export
-plot.state_dist <- function(x, ylim = 0.94, ...) {
-  par(mar=c(8,4,4,0))
-  bar <- barplot(count ~ state, data = x, ylim = c(ylim, 1), xpd = FALSE, xaxt = "n", xlab = "")
-  text(cex = 1, x = bar, y = par("usr")[3] - 0.002, labels = t2$state, xpd = TRUE, srt = 45, pos = 2)
-}
-
 
 #' @export
 plot.ReverseResults <- function(x, ...) {

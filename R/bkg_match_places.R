@@ -4,7 +4,6 @@
 #' and \code{zip_code}
 #'
 #' @noRd
-
 bkg_match_places <- function(
   .data,
   cols,
