@@ -135,13 +135,13 @@ bkg_match_places <- function(
 
     data_mun_real <- structure(
       tibble::tibble(
-        data_mun_real[[paste0(place, ".x")]],
         data_mun_real[[paste0(zip_code, ".x")]],
-        data_mun_real[[paste0(place, ".y")]],
+        data_mun_real[[paste0(place, ".x")]],
         data_mun_real[[paste0(zip_code, ".y")]],
+        data_mun_real[[paste0(place, ".y")]],
         data_mun_real[["mpost"]]
       ),
-      names = c(place, zip_code, "place_matched", "zip_code_matched", "score")
+      names = c(zip_code, place, "zip_code_matched", "place_matched", "score")
     )
   })
 

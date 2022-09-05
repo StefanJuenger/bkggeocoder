@@ -25,6 +25,7 @@ bkg_reverse(
   target_quality = NULL,
   ...,
   join_with_original = FALSE,
+  identifiers = "rs",
   verbose = TRUE
 )
 }

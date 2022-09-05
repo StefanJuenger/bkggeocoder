@@ -2,7 +2,6 @@
 
 S3method(plot,GeocodingResults)
 S3method(plot,ReverseResults)
-S3method(plot,state_dist)
 S3method(print,GeocodingResults)
 S3method(summary,GeocodingResults)
 export(bkg_export_geocodes)

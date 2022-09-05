@@ -241,7 +241,7 @@ bkg_geocode_offline <- function(
   args <- as.list(environment())
   args$.data <- NULL
 
-  .data <- cbind(data.frame(.iid = row.names(.data)), .data)
+  .data <- cbind(data.frame(.iid = as.numeric(row.names(.data))), .data)
 
   # Place Matching ----
   data_edited <- bkg_match_places(
@@ -293,7 +293,7 @@ bkg_geocode_offline <- function(
       cleaned_data,
       .data,
       by = ".iid",
-      all.y = TRUE,
+      all.x = TRUE,
       sort = TRUE,
       suffixes = c("", "_input")
     )
@@ -301,46 +301,32 @@ bkg_geocode_offline <- function(
     # Remove all '_input' variables since they are already in the original to be
     # merged with
     cleaned_data <- sf::st_as_sf(tibble::as_tibble(cleaned_data))
-    cleaned_data <- cleaned_data[!names(cleaned_data) %in% c(
-      "street_input",
-      "house_number_input",
-      "zip_code_input",
-      "place_input"
-    )]
-
+    cleaned_data <- cleaned_data[!names(cleaned_data) %in% paste0(cols, "_input")]
+    
     # Do the merging also for not-place-matched addresses
     data_edited$unmatched <- merge(
       data_edited$unmatched,
       .data,
       by = ".iid",
-      all.y = FALSE,
+      all.x = TRUE,
       sort = TRUE,
       suffixes = c("", "_input")
     )
+    
+    data_edited$unmatched <- data_edited$unmatched[
+      !names(data_edited$unmatched) %in% paste0(cols, "_input")
+    ]
   }
 
   # Remove internal id
   cleaned_data$.iid <- NULL
+  data_edited$unmatched$.iid <- NULL
 
-  if (!missing(crs)) {
-    cleaned_data <- sf::st_transform(cleaned_data, crs = crs)
-  }
+  cleaned_data <- sf::st_transform(cleaned_data, crs = crs)
 
   # Create Output ----
   geocoded_data    <- cleaned_data[which(cleaned_data$score >= target_quality), ]
   geocoded_data_na <- cleaned_data[which(cleaned_data$score <  target_quality), ]
-  data_edited$unmatched <- subset(data_edited$unmatched, select = -.iid)
-
-  if (isTRUE(join_with_original)) {
-    data_edited$unmatched <-
-      data_edited$unmatched[, c(
-        names(.data)[! names(.data) %in% c(".iid")],
-        names(data_edited$unmatched)[
-          grepl("_matched", names(data_edited$unmatched))
-        ][c(2, 1)]
-      )
-      ]
-  }
 
   output_list <- structure(
     list(
