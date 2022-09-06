@@ -55,10 +55,15 @@ bkg_read <- function(
 ) {
   places_file <- "zip_places/ga_zip_places.csv.encryptr.bin"
   
+  data_path <- file.path(
+    data_path,
+    ifelse(what == "addresses", "ga", "zip_places")
+  )
+  
   dataset <- switch(
     what,
-    places = "zip_places/ga_zip_places.csv.encryptr.bin",
-    addresses = sprintf("ga/%s.csv.encryptr.bin", place)
+    places = "ga_zip_places.csv.encryptr.bin",
+    addresses = paste0(place, ".csv.encryptr.bin")
   )
   
   if (data_from_server) {
@@ -69,19 +74,21 @@ bkg_read <- function(
   }
 
   .crypt <- tryCatch(
-    expr = readRDS(.crypt_file),
-    error = function(e) {
-      if (data_from_server) {
-        cli::cli_abort(c(
-          "Cannot access local server under {.path http://10.6.13.132:8000/}.",
-          "!" = "Verify that you are inside the GESIS intranet or set {.var data_from_server = FALSE}"
-        ))
-      } else {
-        cli::cli_abort("Cannot read data from {.path {data_path}}")
-      }
-    },
-    warning = function(w) NULL
+    expr = suppressWarnings(readRDS(.crypt_file)),
+    error = function(e) NULL
   )
+
+  if (is.null(.crypt)) {
+    if (missing(place)) place <- dataset
+    if (data_from_server) {
+      cli::cli_abort(c(
+        "Cannot access {.val {place}} from the local server under {.path http://10.6.13.132:8000/}.",
+        "!" = "Verify that you are inside the GESIS intranet or set {.var data_from_server = FALSE}"
+      ))
+    } else {
+      cli::cli_abort("Cannot read {.val {place}} from {.path {data_path}}.")
+    }
+  }
 
   fread_encrypted(.crypt, credentials_path, ...)
 }
