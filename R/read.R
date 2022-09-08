@@ -54,18 +54,13 @@ bkg_read <- function(
   ...
 ) {
   places_file <- "zip_places/ga_zip_places.csv.encryptr.bin"
-  
-  data_path <- file.path(
-    data_path,
-    ifelse(what == "addresses", "ga", "zip_places")
-  )
-  
+
   dataset <- switch(
     what,
     places = "zip_places/ga_zip_places.csv.encryptr.bin",
     addresses = sprintf("ga/%s.csv.encryptr.bin", place)
   )
-  
+
   if (data_from_server) {
     .crypt_file <- url(file.path("http://10.6.13.132:8000", utils::URLencode(dataset), fsep = "/"))
     on.exit(close(.crypt_file))
