@@ -62,8 +62,8 @@ bkg_read <- function(
   
   dataset <- switch(
     what,
-    places = "ga_zip_places.csv.encryptr.bin",
-    addresses = paste0(place, ".csv.encryptr.bin")
+    places = "zip_places/ga_zip_places.csv.encryptr.bin",
+    addresses = sprintf("ga/%s.csv.encryptr.bin", place)
   )
   
   if (data_from_server) {
