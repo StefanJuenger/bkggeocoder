@@ -22,13 +22,18 @@ bkg_match_places <- function(
   }
 
   # Prepare place data ----
+  # Handle leading zeroes in zip codes
   .data[, zip_code] <- vapply(.data[, zip_code], function(zip) {
     zip <- as.character(zip)
     if (nchar(zip) == 4) {
       paste0(0, zip)
     } else zip
   }, FUN.VALUE = character(1))
+  
+  # Remove duplicates of place-zipcode combinations
   data_mun <- unique(.data[c(place, zip_code)])
+  
+  # Create AZ and PLZ groups
   data_mun$az_group <- substr(data_mun[, place], 1, 3)
   data_mun$plz_group <- substr(data_mun[, zip_code], 1, 6)
 
@@ -70,6 +75,14 @@ bkg_match_places <- function(
       bkg_zip_places,
       on = c("plz_group"),
     )
+    
+    if (!nrow(data_mun_pairs)) {
+      cli::cli_abort(c(
+        "!" = paste(
+          "None of the zip codes in the {.var {zip_code}} column",
+          "seems to be a valid zip code.")
+      ), call = NULL)
+    }
 
     reclin2::compare_pairs(
       data_mun_pairs,
@@ -155,8 +168,10 @@ bkg_match_places <- function(
   )
 
   # Format matched data
-  data_matched <- data_mun_real[data_mun_real$score >= place_match_quality, ]
-  data_unmatched <- data_mun_real[data_mun_real$score < place_match_quality, ]
+  data_matched <- data_mun_real[data_mun_real$score >= place_match_quality &
+                                  !is.na(data_mun_real$score), ]
+  data_unmatched <- data_mun_real[data_mun_real$score < place_match_quality |
+                                    is.na(data_mun_real$score), ]
   unmatched_places <- data_unmatched[, c(zip_code, place)]
   unmatched_places <- unmatched_places[!duplicated(unmatched_places), ]
   rownames(unmatched_places) <- NULL
