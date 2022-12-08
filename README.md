@@ -10,10 +10,10 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-red.svg)](http
 
 <!-- badges: end -->
 
-`bkggeocoder` is an R interface to the data and services of the [Federal
+`bkggeocoder` is an R interface to the geocoding services of the [Federal
 Agency of Cartography and Geodesy
 (BKG)](https://gdz.bkg.bund.de/index.php/default/webanwendungen/bkg-geocoder.html)
-in Germany. The package contains two main features:
+in Germany and an offline geocoder based on its raw address data. The package contains two main features:
 
 - `bkg_geocode_offline`: Offline geocoding based on raw address data
 - `bkg_geocode`: Online geocoding through the BKG geocoding API
