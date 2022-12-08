@@ -153,32 +153,11 @@ For more details on the method
 choice, refer to the \code{\link[stringdist]{stringdist-metrics}}
 documentation from the \code{stringdist} package.
 
-For geocoding \code{\link[bkggeocoder]{commaddr}} with a target quality of
-0.9 and a Jaro-based place matching with a threshold of 0.9, the following
-metrics apply for different geocoding string distance methods, sorted by
-their percentage of successfully geocoded addresses:
-\tabular{lrrrr}{
-\strong{method} \tab \strong{geocoded} \tab \strong{spearman} \tab \strong{mean_score} \tab \strong{sd_score} \cr
-BKG                     \tab 0.9972 \tab 1.0000 \tab 0.9906 \tab 0.0153\cr
-Cosine                  \tab 0.9251 \tab 0.3757 \tab 0.9955 \tab 0.0174\cr
-Jaro                    \tab 0.9232 \tab 0.3833 \tab 0.9956 \tab 0.0166\cr
-Jaro-Winkler            \tab 0.9232 \tab 0.3833 \tab 0.9956 \tab 0.0166\cr
-Optimal string aligment \tab 0.9211 \tab 0.3659 \tab 0.9948 \tab 0.0202\cr
-Longest Common String   \tab 0.9182 \tab 0.3668 \tab 0.9948 \tab 0.0198\cr
-Levenshtein             \tab 0.9145 \tab 0.3408 \tab 0.9952 \tab 0.0191\cr
-Damerau-Levenshtein     \tab 0.9145 \tab 0.3408 \tab 0.9952 \tab 0.0192\cr
-Q-gram                  \tab 0.9129 \tab 0.3339 \tab 0.9951 \tab 0.0195\cr
-Jaccard                 \tab 0.8976 \tab 0.1779 \tab 0.9931 \tab 0.0226
-}
-However, keep in mind that this was tested on a clean dataset without many
-spelling errors and without setting weights or penalties. Different metrics
-might be reasonable choices for different use cases.
-
 The overall quality of the geocoding can be evaluated by looking at the
 values of the column \code{score} (ranging from 0 to 1), which is based on
 the second round of record linkage. In general, for both rounds of record
 linkage, a score of above 0.9 can be considered a good match. If the score
-falls below 0.8, the result should be thoroughly scrutinized.
+falls below 0.8, the result might be questionable.
 
 Address data loading works using a temporary cache. Before trying to request
 and decrypt encrypted data chunks, the function will look for each place
