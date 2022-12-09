@@ -4,10 +4,12 @@
 \alias{summary.GeocodingResults}
 \title{Get a summary of the GeocodingResults class}
 \usage{
-\method{summary}{GeocodingResults}(x)
+\method{summary}{GeocodingResults}(object, ...)
 }
 \arguments{
-\item{x}{R object of class 'GeocodingResults'}
+\item{object}{Object of class \code{GeocodingResults}}
+
+\item{...}{Ignored.}
 }
 \description{
 Get a summary of the GeocodingResults class

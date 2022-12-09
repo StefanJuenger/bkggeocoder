@@ -4,13 +4,21 @@
 \alias{print.GeocodingResults}
 \title{Print the output of the GeocodingResults class}
 \usage{
-\method{print}{GeocodingResults}(x, which = c("successful", "na", "unmatched_places"))
+\method{print}{GeocodingResults}(
+  x,
+  which = c("geocoded", "not_geocoded", "not_place_matched", "unmatched_places"),
+  ...
+)
 }
 \arguments{
-\item{x}{R object of class 'GeocodingResults'}
+\item{x}{Object of class \code{GeocodingResults}}
 
 \item{which}{character string; choose which type of the results should be
 displayed}
+
+\item{...}{Further arguments passed on to
+\code{\link[base:print.data.frame]{base::print.data.frame()}}
+or \code{\link[sf:sf]{sf::print.sf()}}}
 }
 \description{
 Print the output of the GeocodingResults class
