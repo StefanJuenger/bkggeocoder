@@ -10,10 +10,10 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-red.svg)](http
 
 <!-- badges: end -->
 
-`bkggeocoder` is an R interface to the geocoding services of the [Federal
+`bkggeocoder` is an R interface to the data and services of the [Federal
 Agency of Cartography and Geodesy
 (BKG)](https://gdz.bkg.bund.de/index.php/default/webanwendungen/bkg-geocoder.html)
-in Germany and an offline geocoder based on its raw address data. The package contains two main features:
+in Germany. The package contains two main features:
 
 - `bkg_geocode_offline`: Offline geocoding based on raw address data
 - `bkg_geocode`: Online geocoding through the BKG geocoding API
@@ -26,14 +26,14 @@ things may change in the future.
 ## Requirements
 
 Note that the use of BKG address data is restricted. At the very least,
-you need to have access to the [BKG geocoding
+you need access to the [BKG geocoding
 API](https://gdz.bkg.bund.de/index.php/default/geokodierungsdienst-opensearch-der-adv-fur-adressen-und-geonamen-gdz-geokodierung.html)
-to use the online geocoding functions. Additionally, in order to use the
-offline geocoding features, access to the raw encrypted BKG data is
-required as well as a set of credentials to decrypt the data. Before
-installing the package, make sure you fulfill these requirements. In any
-case, this repository serves as a means to make geocoding workflows that
-make use of this package transparent and reproducible.
+to use the online geocoding functions. Additionally, access to the raw
+encrypted BKG data is required to use the offline geocoding features and
+a set of credentials to decrypt the data. Before installing the package,
+make sure you fulfill these requirements. In any case, this repository
+serves as a means to make geocoding workflows using this package
+transparent and reproducible.
 
 When using and publishing the results of the geocoding functions in this
 package, always refer to the data source as follows:

@@ -148,10 +148,12 @@ and the Winkler boost threshold (\code{bt}). To derive a distance index that
 falls between 0 and 1, where 0 denotes a complete dissimilarity between both
 address strings and 1 denotes a complete similarity, certain edit and q-gram
 distance metrics are devided by their maximum possible value as explained in
-van der Loo (2014).
-For more details on the method
-choice, refer to the \code{\link[stringdist]{stringdist-metrics}}
-documentation from the \code{stringdist} package.
+van der Loo (2014). For more details on the method choice, refer to the
+\code{\link[stringdist]{stringdist-metrics}} documentation from the
+\code{stringdist} package. Generally and particularly for clean addresses,
+heuristic distance measures (Jaro/Jaro-Winkler) seem to perform the best,
+followed by edit distances (e.g. Levenshtein, LCS). Other distance measures
+(e.g. soundex, cosine) might be useful for different use cases.
 
 The overall quality of the geocoding can be evaluated by looking at the
 values of the column \code{score} (ranging from 0 to 1), which is based on
