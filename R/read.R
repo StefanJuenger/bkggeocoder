@@ -62,7 +62,7 @@ bkg_read <- function(
   )
 
   if (data_from_server) {
-    .crypt_file <- url(file.path("http://10.6.13.132:8000", utils::URLencode(dataset), fsep = "/"))
+    .crypt_file <- url(file.path("http://10.6.13.50:8000", utils::URLencode(dataset), fsep = "/"))
     on.exit(close(.crypt_file))
   } else {
     .crypt_file <- file.path(data_path, dataset)
