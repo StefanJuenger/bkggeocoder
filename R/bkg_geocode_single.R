@@ -262,10 +262,21 @@ osgts_request <- function(
   req <- httr2::request(url)
   req <- httr2::req_method(req, "POST")
   req <- httr2::req_error(req, is_error = function(res) {
+    if (identical(res$headers[["Content-Type"]], "text/xml;charset=UTF-8")) {
+      link <- cli::style_hyperlink(
+        "gdz_geokodierung",
+        "https://gdz.bkg.bund.de/index.php/default/geokodierungsdienst-opensearch-der-adv-fur-adressen-und-geonamen-gdz-geokodierung.html"
+      )
+      cli::cli_abort(c(
+        "Cannot access OSGTS server.",
+        "x" = "Do you have access to the {.url {link}} service?"
+      ))
+    }
+    
     res <- httr2::resp_body_json(res)
     if (!is.null(res$exceptionCode)) {
       cli::cli_abort(c(
-        "The WFS server returned an exception:",
+        "The OSGTS server returned an exception:",
         "x" = "{res$exceptionCode}: {res$exceptionText[[1]]}"
       ))
     } else FALSE
