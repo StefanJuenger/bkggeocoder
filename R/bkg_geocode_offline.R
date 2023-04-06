@@ -160,7 +160,7 @@
 #' @export
 bkg_geocode_offline <- function(
   .data,
-  cols = 1L:4L,
+  cols = 1:4,
   data_from_server = FALSE,
   data_path = "../bkgdata",
   credentials_path = "../bkgcredentials",

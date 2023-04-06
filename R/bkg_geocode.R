@@ -68,9 +68,9 @@
 #' @encoding UTF-8
 #'
 #' @export
-bkg_geocode <- function (
+bkg_geocode <- function(
   .data,
-  cols = 1L,
+  cols = 1:4,
   epsg = 3035,
   ...,
   structured = TRUE,
@@ -139,7 +139,7 @@ bkg_geocode <- function (
     res
   })
 
-  geocoded_data <- do.call(rbind, geocoded_data)
+  geocoded_data <- rbind_list(geocoded_data)
   geocoded_data <- sf::st_sf(geocoded_data, crs = epsg, sf_column_name = "geometry")
   
   geocoded_data <- clean_geocode(
