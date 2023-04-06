@@ -9,15 +9,14 @@ rbind_list <- function(args) {
   len <- vapply(args, length, numeric(1))
   out <- vector("list", length(len))
   for (i in seq_along(len)) {
-    if (!nrow(args[[i]])) {
-      for (n in unam) `$<-`(args[[i]], n, character())
-    } else {
+    if (nrow(args[[i]])) {
       nam_diff <- setdiff(unam, nam[[i]])
       if (length(nam_diff)) {
-        args[[i]][setdiff(unam, nam[[i]])] <- NA
+        args[[i]][nam_diff] <- NA
       }
+    } else {
+      next
     }
-    
   }
   out <- do.call(rbind, args)
   rownames(out) <- NULL
