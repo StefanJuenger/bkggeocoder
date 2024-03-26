@@ -110,7 +110,8 @@ bkg_match_places <- function(
       est,
       pairs = data_mun_pairs,
       add = TRUE,
-      type = "all"
+      type = "all",
+      inplace = TRUE
     )
 
     if (isTRUE(verbose)) {
