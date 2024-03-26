@@ -19,7 +19,8 @@
 #' @param data_from_server \code{[logical]}
 #'
 #' Whether the address data should be downloaded from GESIS internal server?
-#' Requires access to the GESIS net. Defaults to \code{FALSE}.
+#' Requires access to the GESIS net. If \code{FALSE}, uses the path provided
+#' by \code{data_path}. Defaults to \code{FALSE}.
 #' @param data_path \code{[character]}
 #'
 #' Path to the address data provided by Stefan Jünger. Ignored
@@ -165,7 +166,7 @@ bkg_geocode_offline <- function(
   data_path = "../bkgdata",
   credentials_path = "../bkgcredentials",
   join_with_original = TRUE,
-  crs = 3035L,
+  crs = 3035,
   identifiers = "rs",
   place_match_quality = 0.8,
   place_match_opts = list(),

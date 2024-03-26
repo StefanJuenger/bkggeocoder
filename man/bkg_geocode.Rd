@@ -8,7 +8,7 @@
 \usage{
 bkg_geocode(
   .data,
-  cols = 1L,
+  cols = 1:4,
   epsg = 3035,
   ...,
   structured = TRUE,
