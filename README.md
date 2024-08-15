@@ -51,3 +51,8 @@ if (!require(remotes)) install.packages("remotes")
 
 remotes::install_github("StefanJuenger/bkggeocoder")
 ```
+
+## Resources
+
+[![IMAGE ALT TEXT
+HERE](https://img.youtube.com/vi/ZnA21LyKK88/0.jpg)](https://www.youtube.com/watch?v=ZnA21LyKK88)
