@@ -3,6 +3,7 @@ bkg_match_addresses <- function(
   cols,
   house_coordinates,
   opts,
+  target_quality,
   verbose
 ) {
   street <- cols[1]
@@ -49,6 +50,7 @@ bkg_match_addresses <- function(
   ))
 
   if (isTRUE(verbose)) {
+    env <- environment()
     cli::cli_progress_bar(
       name = "Matching address data",
       total = nrow(data_edited$matched),
@@ -60,11 +62,9 @@ bkg_match_addresses <- function(
     )
   }
   
-  joined_data <- list()
-
   # Match data with BKG data (record linkage) ----
-  for (i in 1:nrow(data_edited$matched)) {
-    if (isTRUE(verbose)) cli::cli_progress_update()
+  joined_data <- lapply(seq_len(nrow(data_edited$matched)), function(i) {
+    if (isTRUE(verbose)) cli::cli_progress_update(.envir = env)
     # Create a pairs object with matching places and zip codes
     within_place <- house_coordinates[
       place == data_edited$matched[i,]$place_matched &
@@ -74,7 +74,7 @@ bkg_match_addresses <- function(
       x = data_edited$matched[i, ],
       y = within_place
     )
-
+    
     # Compute string distance scores of the pairs
     reclin2::compare_pairs(
       data_edited_pairs,
@@ -82,9 +82,9 @@ bkg_match_addresses <- function(
       default_comparator = dyn_comparator(target_quality, opts),
       inplace = TRUE
     )
-
+    
     weight_i <- max(data_edited_pairs$whole_address)
-
+    
     # Select data below threshold using a greedy selection algorithm
     reclin2::select_greedy(
       data_edited_pairs,
@@ -94,7 +94,7 @@ bkg_match_addresses <- function(
       inplace = TRUE
     )
     selection <- data_edited_pairs[data_edited_pairs$threshold]
-
+    
     # Link results with original data
     data_linked <- reclin2::link(
       selection,
@@ -102,8 +102,8 @@ bkg_match_addresses <- function(
       all_y = FALSE
     )
     
-    joined_data[[i]] <- cbind(data_linked, score = weight_i)
-  }
+    cbind(data_linked, score = weight_i)
+  })
 
   if (isTRUE(verbose)) {
     cli::cli_progress_done()
@@ -117,8 +117,9 @@ bkg_match_addresses <- function(
       names(joined_data)[names(joined_data) == name] <- paste0(name, ".x")
     }
   }
-  
+
   # Fix scores ----
+  # subtract 0.05 if housenumbers do not match
   regex_chr <- "[0-9]+[a-z]*"
   hn.x <- unlist(match_regex(joined_data$whole_address.x, regex_chr))
   hn.y <- match_regex(joined_data$whole_address.y, regex_chr)
@@ -127,11 +128,13 @@ bkg_match_addresses <- function(
   incorrect_scores <- joined_data$score[hn_mismatch]
   joined_data$score[hn_mismatch] <- incorrect_scores - 0.05
 
-  geocoded <- joined_data[!is.na(joined_data$RS), ]
+  geocoded <- joined_data[
+    !is.na(joined_data$RS) & joined_data$score >= target_quality,
+  ]
 
   if (isTRUE(verbose)) {
-    if (!nrow(joined_data)) {
-      cli::cli_abort("No address could be geocoded. Check your input!")
+    if (!nrow(geocoded)) {
+      cli::cli_warn("No address could be geocoded. Check your input!")
     } else if (nrow(geocoded) == nrow(data_edited$matched)) {
       cli::cli_alert_success("All place-matched addresses could be geocoded.")
     } else {
