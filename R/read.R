@@ -77,7 +77,7 @@ bkg_read <- function(
     if (missing(place)) place <- dataset
     if (data_from_server) {
       cli::cli_abort(c(
-        "Cannot access {.val {place}} from the local server under {.path http://10.6.13.132:8000/}.",
+        "Cannot access {.val {place}} from the local server under {.path http://10.6.13.50:8000/}.",
         "!" = "Verify that you are inside the GESIS intranet or set {.var data_from_server = FALSE}"
       ))
     } else {
