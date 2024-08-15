@@ -219,11 +219,26 @@ bkg_geocode_single <- function(
 }
 
 
-osgts_request <- function(
-  query, strasse, haus, plz, ort, ortsteil, strasse_haus, srsName, propertyNames,
-  count, filter, bbox, geometry, relation, focus_point, distance, minScore,
-  maxScore, allScore, ...
-) {
+osgts_request <- function(query,
+                          strasse,
+                          haus,
+                          plz,
+                          ort,
+                          ortsteil,
+                          strasse_haus,
+                          srsName,
+                          propertyNames,
+                          count,
+                          filter,
+                          bbox,
+                          geometry,
+                          relation,
+                          focus_point,
+                          distance,
+                          minScore,
+                          maxScore,
+                          allScore,
+                          ...) {
   args <- as.list(environment())
 
   if (elen <- ...length()) {
@@ -231,18 +246,11 @@ osgts_request <- function(
   }
   
   if (!is.null(srsName)) {
-    if (is.na(srsName)) {
-      cli::cli_abort(paste(
-        "CRS could not be detected from the input. Please pass it explicitly",
-        "using the {.var epsg} argument."
-      ))
-    }
-    epsg <- srsName
     args$srsName <- sprintf("EPSG:%s", srsName)
   }
   
   if (!is.null(geometry)) {
-    geometry <- sf::st_transform(geometry, epsg)
+    geometry <- sf::st_transform(geometry, srsName)
     args$geometry <- sf::st_as_text(sf::st_geometry(geometry))
   }
   
@@ -389,7 +397,7 @@ clean_geocode <- function(.data,
     trimws(gsub("\\s+", " ", paste(comp, collapse = " ")))
   }, character(1)) %__% NA
 
-  has_rs <- !is.null(.data$RS)
+  has_rs <- !is.null(.data[["RS"]])
   # Extract regionalschlüssel
   rs <- if (has_rs) {
     lapply(c(9, 5, 3, 2), function(n) substr(.data[["RS"]] %??% NA, 1, n))
@@ -432,7 +440,7 @@ clean_geocode <- function(.data,
     .after = 0
   )
 
-  if (!is.null(.data$hit)) {
+  if (!is.null(.data[["hit"]])) {
     .data$hit <- .data$hit == "T"
   }
   

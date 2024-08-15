@@ -39,3 +39,11 @@ match_regex <- function(x, pattern, ...) {
   matches <- regexec(pattern, x, ...)
   regmatches(x, matches)
 }
+
+
+check_lgl <- function(x) {
+  obj <- deparse(substitute(x))
+  if (!is.logical(x) || is.na(x)) {
+    cli::cli_abort(sprintf("The argument %s must be a non-missing logical.", obj))
+  }
+}
