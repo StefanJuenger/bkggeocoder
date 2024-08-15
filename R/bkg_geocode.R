@@ -167,13 +167,12 @@ bkg_geocode <- function(
   # Remove internal identifier
   geocoded_data$.iid <- NULL
 
+  # Split into geocoded and non-geocoded
   geocoded_data_na <- geocoded_data[
-    is.na(geocoded_data$RS) |
-      geocoded_data$score < target_quality, 
+    is.na(geocoded_data$score) | geocoded_data$score < target_quality, 
   ]
   geocoded_data <- geocoded_data[
-    !is.na(geocoded_data$RS) &
-      geocoded_data$score >= target_quality,
+    !is.na(geocoded_data$score) & geocoded_data$score >= target_quality,
   ]
 
   output_list <- structure(
