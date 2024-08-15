@@ -1,3 +1,7 @@
+"%||%" <- function(x, y) if (is.null(x)) y else x
+"%??%" <- function(x, y) if (is.null(x) || all(is.na(x))) y else x
+"%__%" <- function(x, y) if (length(x) == 0) y else x
+
 #' Binds list of (sf) data.frames to a single data.frame. If the number of
 #' columns differs, fills empty columns with NA
 #' @param args List of data.frames or sf objects
