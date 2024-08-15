@@ -16,10 +16,6 @@ bkg_match_places <- function(
 ) {
   place <- ifelse(length(cols) == 4, cols[4], cols[3])
   zip_code <- ifelse(length(cols) == 4, cols[3], cols[2])
-  
-  if (place_match_quality == 1L) {
-    place_match_quality <- 1L - -5e-8
-  }
 
   # Prepare place data ----
   # Handle leading zeroes in zip codes
@@ -129,15 +125,20 @@ bkg_match_places <- function(
       threshold = 0,
       inplace = TRUE
     )
-    
+
     # Sometimes select_greedy is not greedy enough and leaves out some values
-    fix_greedy <- \(x, score) if (!sum(x)) max(score) == score else x
+    fix_greedy <- function(x, score) {
+      if (!sum(x)) {
+        x <- max(score) == score
+      }
+      x
+    }
 
     data_mun_pairs$threshold <- data_mun_pairs[,
       .(threshold = fix_greedy(threshold, mpost)), by = ".x"
     ][["threshold"]]
 
-    scores <- data_mun_pairs[data_mun_pairs$threshold, c(".x", "mpost")]
+    scores <- data_mun_pairs[data_mun_pairs$threshold, c(".x", "mprob")]
 
     data_mun_real <- reclin2::link(
       pairs = data_mun_pairs[data_mun_pairs$threshold],
@@ -153,7 +154,7 @@ bkg_match_places <- function(
         data_mun_real[[paste0(place, ".x")]],
         data_mun_real[[paste0(zip_code, ".y")]],
         data_mun_real[[paste0(place, ".y")]],
-        data_mun_real[["mpost"]]
+        data_mun_real[["mprob"]]
       ),
       names = c(zip_code, place, "zip_code_matched", "place_matched", "score")
     )
