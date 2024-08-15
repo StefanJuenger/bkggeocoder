@@ -228,13 +228,13 @@ bkg_geocode_offline <- function(
   # Place Matching ----
   data_edited <- bkg_match_places(
     .data[c(".iid", cols)],
-    cols,
-    data_from_server,
-    data_path,
-    credentials_path,
-    place_match_quality,
-    place_match_opts,
-    verbose
+    cols = cols,
+    data_from_server = data_from_server,
+    data_path = data_path,
+    credentials_path = credentials_path,
+    place_match_quality = place_match_quality,
+    opts = place_match_opts,
+    verbose = verbose
   )
 
   # Querying Database ----
@@ -259,6 +259,7 @@ bkg_geocode_offline <- function(
     cols = cols,
     house_coordinates = house_coordinates,
     opts = target_opts,
+    target_quality = target_quality,
     verbose = verbose
   )
 
