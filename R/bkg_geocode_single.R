@@ -219,11 +219,26 @@ bkg_geocode_single <- function(
 }
 
 
-osgts_request <- function(
-  query, strasse, haus, plz, ort, ortsteil, strasse_haus, srsName, propertyNames,
-  count, filter, bbox, geometry, relation, focus_point, distance, minScore,
-  maxScore, allScore, ...
-) {
+osgts_request <- function(query,
+                          strasse,
+                          haus,
+                          plz,
+                          ort,
+                          ortsteil,
+                          strasse_haus,
+                          srsName,
+                          propertyNames,
+                          count,
+                          filter,
+                          bbox,
+                          geometry,
+                          relation,
+                          focus_point,
+                          distance,
+                          minScore,
+                          maxScore,
+                          allScore,
+                          ...) {
   args <- as.list(environment())
 
   if (elen <- ...length()) {
@@ -231,18 +246,11 @@ osgts_request <- function(
   }
   
   if (!is.null(srsName)) {
-    if (is.na(srsName)) {
-      cli::cli_abort(paste(
-        "CRS could not be detected from the input. Please pass it explicitly",
-        "using the {.var epsg} argument."
-      ))
-    }
-    epsg <- srsName
     args$srsName <- sprintf("EPSG:%s", srsName)
   }
   
   if (!is.null(geometry)) {
-    geometry <- sf::st_transform(geometry, epsg)
+    geometry <- sf::st_transform(geometry, srsName)
     args$geometry <- sf::st_as_text(sf::st_geometry(geometry))
   }
   
@@ -336,7 +344,13 @@ wfs_request <- function(street, house_number, zip_code, place, max_features, eps
 }
 
 
-clean_geocode <- function(.data, query, street, house_number, zip_code, place, identifiers) {
+clean_geocode <- function(.data,
+                          query,
+                          street,
+                          house_number,
+                          zip_code,
+                          place,
+                          identifiers) {
   alt_names <- list(
     score = "score", address_input = "address_input", 
     address_output = "address_output", id = "id", text = "text", typ = "type",
@@ -353,19 +367,18 @@ clean_geocode <- function(.data, query, street, house_number, zip_code, place, i
     GITTER_ID_1km = "GITTER_ID_1km", source = "source", bbox = "bbox",
     .iid = ".iid", geometry = "geometry"
   )
-  
+
   if (isTRUE(identifiers)) {
     identifiers <- c("rs", "nuts", "inspire")
   }
 
   # Change colnames if necessary
-  colnames(.data) <- vapply(colnames(.data), function(nam) alt_names[[nam]], character(1))
+  colnames(.data) <- vapply(
+    colnames(.data),
+    function(nam) alt_names[[nam]] %||% nam,
+    FUN.VALUE = character(1)
+  )
   .data_no_geom <- sf::st_drop_geometry(.data)
-  
-  has_attrib <- function(attrib, i = seq_len(nrow(.data))) {
-    exists <- attrib %in% colnames(.data_no_geom)
-    if (exists) !any(sapply(.data_no_geom[i, attrib], is.na)) else FALSE
-  }
 
   # Construct input and output addresses
   addrin <- gsub("\\s+", " ", trimws(paste(
@@ -373,52 +386,66 @@ clean_geocode <- function(.data, query, street, house_number, zip_code, place, i
     house_number,
     zip_code,
     place)
-  ))
+  )) %__%
+    query %__%
+    NA
+
+  # Paste together the output address
   addrout <- vapply(seq_len(nrow(.data)), function(i) {
-    trimws(gsub("\\s+", " ", paste(
-      if (has_attrib("street", i)) .data$street[i] else "",
-      if (has_attrib("house_number", i)) .data$house_number[i] else  "",
-      if (has_attrib("zip_code", i)) .data$zip_code[i] else "",
-      if (has_attrib("place", i)) .data$place[i] else ""
-    )))
-  }, character(1))
-  
-  VWG <- if (has_attrib("RS")) substr(.data$RS, 1, 9) else NA
-  KRS <- if (has_attrib("RS")) substr(.data$RS, 1, 5) else NA
-  RBZ <- if (has_attrib("RS")) substr(.data$RS, 1, 3) else NA
-  STA <- if (has_attrib("RS")) substr(.data$RS, 1, 2) else NA
-  
-  nuts <- if (has_attrib("RS")) {
-    merge(data.frame(KRS = KRS), nuts_ars, by = "KRS", all.x = TRUE)$nuts
+    comp <- c("street", "house_number", "zip_code", "place")
+    comp <- lapply(comp, function(x) .data[[x]][i] %??% "")
+    trimws(gsub("\\s+", " ", paste(comp, collapse = " ")))
+  }, character(1)) %__% NA
+
+  has_rs <- !is.null(.data[["RS"]])
+  # Extract regionalschlüssel
+  rs <- if (has_rs) {
+    lapply(c(9, 5, 3, 2), function(n) substr(.data[["RS"]] %??% NA, 1, n))
   }
 
+  # Generate NUTS
+  nuts <- if (has_rs && "nuts" %in% identifiers) {
+    nuts <- merge(
+      data.frame(KRS = rs[[2]]),
+      nuts_ars,
+      by = "KRS",
+      all.x = TRUE
+    )$nuts
+    list(nuts3 = nuts, nuts2 = substr(nuts, 1, 4), nuts1 = substr(nuts, 1, 3))
+  }
+
+  # Generate INSPIRE grids
+  grid <- if (has_rs && inherits(.data, "sf") && "inspire" %in% identifiers) {
+    list(
+      spt_create_inspire_ids(.data, type = "100m"),
+      spt_create_inspire_ids(.data, type = "1km")
+    )
+  }
+  
   # Add modified data
   .data <- tibble::add_column(
     .data,
-    address_input = if (length(addrin)) {
-      addrin
-    } else if (length(!is.null(query))) {
-      query
-    } else NA,
-    address_output = if (length(addrout)) addrout else NA,
-    VWG = VWG, KRS = KRS, RBZ = RBZ, STA = STA,
-    nuts3 = nuts, nuts2 = substr(nuts, 1, 4), nuts1 = substr(nuts, 1, 3),
-    GITTER_ID_100m = if (inherits(.data, "sf")) {
-      spt_create_inspire_ids(.data, type = "100m")
-    } else NA,
-    GITTER_ID_1km = if (inherits(.data, "sf")) {
-      spt_create_inspire_ids(.data, type = "1km")
-    } else NA,
+    address_input = addrin,
+    address_output = addrout,
+    VWG = rs[[1]],
+    KRS = rs[[2]],
+    RBZ = rs[[3]],
+    STA = rs[[4]],
+    nuts3 = nuts[[1]],
+    nuts2 = nuts[[2]],
+    nuts1 = nuts[[3]],
+    GITTER_ID_100m = grid[[1]],
+    GITTER_ID_1km = grid[[2]],
     source = "\u00a9 GeoBasis-DE / BKG, Deutsche Post Direkt GmbH, Statistisches Bundesamt, Wiesbaden (2021)",
     .after = 0
   )
 
-  if (has_attrib("hit")) {
-    .data$hit <- if (has_attrib("hit")) .data$hit == "T" else NA
+  if (!is.null(.data[["hit"]])) {
+    .data$hit <- .data$hit == "T"
   }
   
   # bbox data is given as a raw geojson string which is not that pretty
-  if (has_attrib("bbox")) {
+  if (!is.null(.data$bbox)) {
     .data$bbox <- suppressWarnings(lapply(.data$bbox, function(bbox) {
       sf::st_geometry(sf::read_sf(bbox, crs = sf::st_crs(.data)))
     }))
@@ -427,12 +454,6 @@ clean_geocode <- function(.data, query, street, house_number, zip_code, place, i
   
   if (!"rs" %in% identifiers) {
     .data[c("RS", "AGS", "KRS", "RBZ", "VWG", "STA")] <- NULL
-  }
-  if (!"nuts" %in% identifiers) {
-    .data[grepl("nuts", names(.data))] <- NULL
-  }
-  if (!"inspire" %in% identifiers) {
-    .data[grepl("GITTER", names(.data))] <- NULL
   }
 
   # Order columns based on the alt_names list order

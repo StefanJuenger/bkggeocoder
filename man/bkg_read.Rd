@@ -28,7 +28,8 @@ reads in all addresses of a place specified in \code{"place"}.}
 \item{data_from_server}{\code{[logical]}
 
 Whether the address data should be downloaded from GESIS internal server?
-Requires access to the GESIS net. Defaults to \code{FALSE}.}
+Requires access to the GESIS net. If \code{FALSE}, uses the path provided
+by \code{data_path}. Defaults to \code{FALSE}.}
 
 \item{data_path}{\code{[character]}
 

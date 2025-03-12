@@ -7,12 +7,12 @@
 \usage{
 bkg_geocode_offline(
   .data,
-  cols = 1L:4L,
+  cols = 1:4,
   data_from_server = FALSE,
   data_path = "../bkgdata",
   credentials_path = "../bkgcredentials",
   join_with_original = TRUE,
-  crs = 3035L,
+  crs = 3035,
   identifiers = "rs",
   place_match_quality = 0.8,
   place_match_opts = list(),
@@ -41,7 +41,8 @@ code and municipality (in this order).}
 \item{data_from_server}{\code{[logical]}
 
 Whether the address data should be downloaded from GESIS internal server?
-Requires access to the GESIS net. Defaults to \code{FALSE}.}
+Requires access to the GESIS net. If \code{FALSE}, uses the path provided
+by \code{data_path}. Defaults to \code{FALSE}.}
 
 \item{data_path}{\code{[character]}
 

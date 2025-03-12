@@ -1,3 +1,7 @@
+"%||%" <- function(x, y) if (is.null(x)) y else x
+"%??%" <- function(x, y) if (is.null(x) || all(is.na(x))) y else x
+"%__%" <- function(x, y) if (length(x) == 0) y else x
+
 #' Binds list of (sf) data.frames to a single data.frame. If the number of
 #' columns differs, fills empty columns with NA
 #' @param args List of data.frames or sf objects
@@ -34,4 +38,12 @@ rbind_list <- function(args) {
 match_regex <- function(x, pattern, ...) {
   matches <- regexec(pattern, x, ...)
   regmatches(x, matches)
+}
+
+
+check_lgl <- function(x) {
+  obj <- deparse(substitute(x))
+  if (!is.logical(x) || is.na(x)) {
+    cli::cli_abort(sprintf("The argument %s must be a non-missing logical.", obj))
+  }
 }

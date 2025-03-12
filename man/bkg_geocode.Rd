@@ -7,11 +7,11 @@
 \title{BKG batch (reverse) geocoding}
 \usage{
 bkg_geocode(
-  .data,
-  cols = 1L,
+  .data = NULL,
+  query = NULL,
+  cols = 1:4,
   epsg = 3035,
   ...,
-  structured = TRUE,
   join_with_original = FALSE,
   identifiers = "rs",
   target_quality = 0.9,
@@ -36,7 +36,14 @@ For \code{bkg_geocode}, a dataframe containing address data. The dataframe
 must all columns specified with the \code{cols} argument. For
 \code{bkg_reverse}, .data is expected to be an \code{sf} data.frame
 containing geometries of a single geometry type. Geometry types correspond to
-the allowed geometry types in \code{\link[bkggeocoder]{bkg_reverse_single}}.}
+the allowed geometry types in \code{\link[bkggeocoder]{bkg_reverse_single}}.
+Ignored if \code{structured = FALSE}.}
+
+\item{query}{\code{[character]}
+A character vector containing OpenSearch query strings. These types of
+queries follow their own query language documented in the
+[\code{gdz_geokodierung} documentation](https://sg.geodatenzentrum.de/web_public/gdz/dokumentation/deu/geokodierungsdienst.pdf).
+For details refer to the details. Ignored if \code{structured = TRUE}.}
 
 \item{cols}{\code{[numeric/character]}
 
@@ -56,17 +63,6 @@ Numeric or character string containing an EPSG code for the requested CRS.}
 \code{\link[bkggeocoder]{bkg_geocode_single}} or
 \code{\link[bkggeocoder]{bkg_reverse_single}}}
 
-\item{structured}{\code{[logical]}
-
-If \code{TRUE}, activates structured geocoding. Structured geocoding accepts
-up to six columns describing different elements of an address. If
-\code{FALSE}, activates unstructured geocoding. Unstructured geocoding
-accepts only a single column containing an address string (and, optionally,
-query operators as described in
-\code{\link[bkggeocoder]{bkg_geocode_single}}). Generally, structured
-geocoding is the safer option, but unstructured geocoding offers much more
-flexibility and requires less data preparation.}
-
 \item{join_with_original}{\code{[logical]}
 
 Whether the input data should be joined with the output data. If \code{FALSE},
@@ -85,7 +81,10 @@ identifiers.}
 \item{target_quality}{\code{[numeric]}
 
 Targeted quality of the geocoding result. Only results are returned that
-lie above this threshold.}
+lie above this threshold. If \code{structured = TRUE}, this value represents
+a probability where 1 denotes absolute certainty and values below 0.9
+bad results. If \code{structured = FALSE}, this value is absolute, meaning
+that it has no maximum limit. Higher values simply denote better results.}
 
 \item{verbose}{\code{[logical]}
 
@@ -107,10 +106,55 @@ structured or unstructured address data. \code{bkg_geocode} finds addresses
 that can be associated to a dataframe of input geometries. Both functions
 require access to the \code{gdz_geokodierung} endpoint of the BKG.
 }
-\examples{
+\section{Queries}{
+ 
+If \code{structured = FALSE}, the geocoding service will perform unstructured
+geocoding which is solely based on a query string provided by the
+\code{query} argument. Such queries follow a unique query language which can
+contain terms and operators. There are two types of terms: single terms and
+phrases. Single terms consist of single words like "Leipzig" or "Sachsen".
+Phrases can consist of multiple words and are linked through double quotes.
+Terms can be combined using boolean operators.
 
+Five boolean operators are recognized: \code{AND}, \code{+}, \code{OR},
+\code{NOT}, \code{-}. \code{AND}, \code{OR}, and \code{+} are identical. To
+control boolean logics, terms can be grouped using paranetheses, e.g.
+\code{(Leipzig OR Halle) AND typ:Ort}. Parantheses can also be used to
+assign multiple terms to the same attribute, e.g.
+\code{strasse:(karl +rothe straße)}.
+
+By default, terms are looked for in the `text` attribute. Other attributes
+can be searched by specifying the attribute name followed by a colon and
+the term, e.g. \code{ort:Leipzig AND strasse:Karl-Rothe-Straße}.
+
+The query syntax for terms supports the use of wildcards. Wildcards for
+single characters are specified using the \code{?} character. Wildcards for
+multiple characters are specified using the \code{*} character. Both wildcards
+are special characters and must be escaped with a backslash \code{\\}.
+Wildcards cannot be used as the first character in a string.
+
+Fuzzy searches are supported through the tilde operator \code{~}. 
+Fuzzy searches use the Levenshtein string distance to increase the search
+tolerance. A tolerance level can be inserted right after the tilde operator,
+e.g. \code{Leipzig~0.6}. The default tolerance is 0.5. Higher values indicate
+more similar terms. In case of phrases, the tilde operator denotes the
+distance between the terms inside the phrase. A value of 1 would indicate
+a 1-word distance between the terms inside a phrase, e.g.
+\code{"karl straße"~1}.
+
+Terms can be weighted through the \code{^} operator. This weight can be
+ignored in case of relative scoring. For example,
+\code{ort:Leipzig^5.3 typ:Strasse^0.5} would assign a higher weight to
+Leipzig than to the place type street.
+
+The following special characters are reserved by the query syntax:
+
+\preformatted{+ - && || ! ( ) { } [ ] ^ " ~ * = : \\}
+}
+
+\examples{
 \dontrun{
-# dataset with addresses
+# structured search
 address_data <- tibble::tribble(
  ~street, ~house_number, ~zip_code, ~place,
  "B2", "1", "68159", "Mannheim",
@@ -118,6 +162,20 @@ address_data <- tibble::tribble(
 )
 
 bkg_geocode(data = address_data, epsg  = 4326)
-}
 
+# stricter geocoding
+bkg_geocode(data = address_data, target_quality = 0.99)
+
+# unstructured search
+bkg_geocode(query = "Unter Sachsenhausen 6-8 50667 Köln")
+
+# wildcard query
+bkg_geocode(query = c("Freib\\\\?rg", "Frank\\\\*"))
+
+# without boolean operator: returns state
+bkg_geocode(query = "Nordrhein Westfalen")
+
+# with NOT operator: returns street
+bkg_geocode(query = "Nordrhein NOT Westfalen")
+}
 }
