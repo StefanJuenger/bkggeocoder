@@ -38,5 +38,5 @@ Suggests:
     rmarkdown,
     knitr,
     rnaturalearth
-RoxygenNote: 7.2.1
+RoxygenNote: 7.2.2
 VignetteBuilder: knitr
