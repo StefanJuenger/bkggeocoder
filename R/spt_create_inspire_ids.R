@@ -8,7 +8,7 @@
 #' @param combine Whether to combine the input data with the output values.
 #' @return tibble
 #'
-#' @noRd
+#' @export
 
 spt_create_inspire_ids <- function(
   data,
