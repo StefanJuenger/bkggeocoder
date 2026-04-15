@@ -160,20 +160,20 @@
 #'
 #' @export
 bkg_geocode_offline <- function(
-  .data,
-  cols = 1:4,
-  data_from_server = FALSE,
-  data_path = "../bkgdata",
-  credentials_path = "../bkgcredentials",
-  join_with_original = TRUE,
-  crs = 3035,
-  identifiers = "rs",
-  place_match_quality = 0.8,
-  place_match_opts = list(),
-  target_quality = 0.8,
-  target_opts = list(),
-  verbose = TRUE,
-  force_decrypt = FALSE
+    .data,
+    cols = 1:4,
+    data_from_server = FALSE,
+    data_path = "../bkgdata",
+    credentials_path = "../bkgcredentials",
+    join_with_original = TRUE,
+    crs = 3035,
+    identifiers = "rs",
+    place_match_quality = 0.8,
+    place_match_opts = list(),
+    target_quality = 0.8,
+    target_opts = list(),
+    verbose = TRUE,
+    force_decrypt = FALSE
 ) {
   
   if (!is.data.frame(.data)) {
@@ -205,7 +205,7 @@ bkg_geocode_offline <- function(
   if (target_quality > 1 || target_quality < 0) {
     cli::cli_abort("{.var target_quality} needs to be a value between 0 and 1.")
   }
-
+  
   if (isTRUE(verbose)) {
     cli::cli_h1("Starting offline geocoding")
     cli::cat_line()
@@ -214,19 +214,19 @@ bkg_geocode_offline <- function(
       "i" = "Targeted quality of place-matching: {.val {place_match_quality}}",
       "i" = "Targeted quality of geocoding: {.val {target_quality}}")
     )
-
+    
     cli::cli_h2("Subsetting data")
   }
-
+  
   cols <- names(.data[cols])
   
   args <- as.list(environment())
   args$.data <- NULL
-
+  
   .data <- cbind(data.frame(.iid = as.numeric(row.names(.data))), .data)
-
+  
   # Place Matching ----
-  data_edited <- bkg_match_places(
+  data_edited <- bkggeocoder:::bkg_match_places(
     .data[c(".iid", cols)],
     cols = cols,
     data_from_server = data_from_server,
@@ -236,9 +236,15 @@ bkg_geocode_offline <- function(
     opts = place_match_opts,
     verbose = verbose
   )
-
+  
   # Querying Database ----
-  house_coordinates <- bkg_query_ga(
+  unique_places <- unique(data_edited$matched$place_matched)
+  
+  matched_data <- data_edited$matched
+  matched_data$place <- matched_data$place_matched
+  matched_data$id <- matched_data$.iid
+  
+  house_coordinates <- bkggeocoder:::bkg_query_ga(
     unique(data_edited$matched$place_matched),
     data_from_server = data_from_server,
     data_path = data_path,
@@ -246,15 +252,15 @@ bkg_geocode_offline <- function(
     verbose = verbose,
     force = force_decrypt
   )
-
+  
   data.table::setkeyv(house_coordinates, c("zip_code", "place"))
-
+  
   # Retrieving Geocoordinates ----
   if (isTRUE(verbose)) {
     cli::cli_h2("Geocoding input data")
   }
-
-  messy_geocoded_data <- bkg_match_addresses(
+  
+  messy_geocoded_data <- bkggeocoder:::bkg_match_addresses(
     data_edited,
     cols = cols,
     house_coordinates = house_coordinates,
@@ -262,15 +268,15 @@ bkg_geocode_offline <- function(
     target_quality = target_quality,
     verbose = verbose
   )
-
+  
   # Data Cleaning ----
-  cleaned_data <- bkg_clean_matched_addresses(
+  cleaned_data <- bkggeocoder:::bkg_clean_matched_addresses(
     messy_geocoded_data,
     cols = cols,
     identifiers = identifiers,
     verbose = verbose
   )
-
+  
   if (isTRUE(join_with_original)) {
     cleaned_data <- merge(
       cleaned_data,
@@ -280,7 +286,7 @@ bkg_geocode_offline <- function(
       sort = TRUE,
       suffixes = c("", "_input")
     )
-
+    
     # Remove all '_input' variables since they are already in the original to be
     # merged with
     cleaned_data <- sf::st_as_sf(tibble::as_tibble(cleaned_data))
@@ -300,17 +306,17 @@ bkg_geocode_offline <- function(
       !names(data_edited$unmatched) %in% paste0(cols, "_input")
     ]
   }
-
+  
   # Remove internal id
   cleaned_data$.iid <- NULL
   data_edited$unmatched$.iid <- NULL
-
+  
   cleaned_data <- sf::st_transform(cleaned_data, crs = crs)
-
+  
   # Create Output ----
   geocoded_data    <- cleaned_data[which(cleaned_data$score >= target_quality), ]
   geocoded_data_na <- cleaned_data[which(cleaned_data$score <  target_quality), ]
-
+  
   output_list <- structure(
     list(
       geocoded = geocoded_data,
@@ -323,7 +329,7 @@ bkg_geocode_offline <- function(
     args = args,
     class = c("GeocodingResults")
   )
-
+  
   output_list
 }
 

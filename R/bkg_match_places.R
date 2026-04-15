@@ -49,7 +49,15 @@ bkg_match_places <- function(
     data_path = data_path,
     credentials_path = credentials_path
   )
-
+  
+  place_simple <- bkg_zip_places$place
+  bkg_zip_places$place <- paste(bkg_zip_places$place, bkg_zip_places$place_add)
+  
+  bkg_zip_places$place_add <- NULL
+  
+  bkg_zip_places_simple <-
+    data.frame(place_matched = bkg_zip_places$place, place_simple)
+  
   names(bkg_zip_places) <- c(place, zip_code)
 
   if (isTRUE(verbose)) {
@@ -63,13 +71,113 @@ bkg_match_places <- function(
 
   bkg_zip_places$az_group <- substr(bkg_zip_places[[place]], 1, 3)
   bkg_zip_places$plz_group <- substr(bkg_zip_places[[zip_code]], 1, 6)
+  
+  # strip whitespace at the end
+  bkg_zip_places[] <- lapply(bkg_zip_places, function(x) {
+    if (is.character(x)) trimws(x) else x
+  })
 
+  bkg_zip_places_simple[] <- lapply(bkg_zip_places_simple, function(x) {
+    if (is.character(x)) trimws(x) else x
+  })
   # Match data (record linkage) ----
+  # suppressWarnings({
+  #   data_mun_real <- lapply(seq_len(nrow(data_mun)), function(i) {
+  #     plz_pairs <- 
+  #       reclin2::pair(
+  #         x = data_mun[i, ],
+  #         y = bkg_zip_places
+  #       )
+  #     
+  #     reclin2::compare_pairs(
+  #       plz_pairs,
+  #       on = c(zip_code),
+  #       default_comparator = bkggeocoder:::dyn_comparator(target_quality, opts),
+  #       inplace = TRUE
+  #     )
+  #     
+  #     weight_plz <- max(plz_pairs[[zip_code]])
+  #     
+  #     if (!nrow(plz_pairs)) {
+  #       cli::cli_abort(c(
+  #         "!" = paste(
+  #           "None of the zip codes in the {.var {zip_code}} column",
+  #           "seems to be a valid zip code.")
+  #       ), call = NULL)
+  #     }
+  #     
+  #     # Select data below threshold using a greedy selection algorithm
+  #     reclin2::select_greedy(
+  #       plz_pairs,
+  #       variable = "threshold",
+  #       score = c(zip_code),
+  #       threshold = 0,
+  #       inplace = TRUE
+  #     )
+  #     
+  #     selection_plz <- 
+  #       plz_pairs[plz_pairs$threshold]
+  #     
+  #     # within plz
+  #     matched_plz <- 
+  #       reclin2::link(
+  #         selection_plz,
+  #         all_x = TRUE,
+  #         all_y = FALSE
+  #       ) |> 
+  #       cbind(score = weight_plz) |> 
+  #       dplyr::pull(paste0(zip_code, ".y"))
+  #     
+  #     within_plz <- bkg_zip_places[bkg_zip_places[[zip_code]] == matched_plz,]
+  #     
+  #     mun_pairs <- 
+  #       reclin2::pair(
+  #         x = data_mun[i, ],
+  #         y = within_plz
+  #       )
+  #     
+  #     # Compute string distance scores of the pairs
+  #     reclin2::compare_pairs(
+  #       mun_pairs,
+  #       on = c(place),
+  #       # on = "whole_address",
+  #       default_comparator = bkggeocoder:::dyn_comparator(target_quality, opts),
+  #       inplace = TRUE
+  #     )
+  #     
+  #     weight_place <- max(mun_pairs[[place]])
+  #     
+  #     # Select data below threshold using a greedy selection algorithm
+  #     reclin2::select_greedy(
+  #       mun_pairs,
+  #       variable = "threshold",
+  #       score = c(place),
+  #       threshold = 0,
+  #       inplace = TRUE
+  #     )
+  #     
+  #     selection_place <- 
+  #       mun_pairs[mun_pairs$threshold]
+  #     
+  #     # Link results with original data
+  #     data_linked <- reclin2::link(
+  #       selection_place,
+  #       all_x = TRUE,
+  #       all_y = FALSE
+  #     )
+  #     
+  #     cbind(data_linked, score = (weight_plz + weight_place) / 2)
+  #   })
+  # })
+  
+  # data_mun_bak <- data_mun
+  # data_mun <- data_mun_bak
+  
   suppressWarnings({
     data_mun_pairs <- reclin2::pair_blocking(
       data_mun,
       bkg_zip_places,
-      on = c("plz_group"),
+      on = c("plz_group")
     )
     
     if (!nrow(data_mun_pairs)) {
@@ -83,7 +191,7 @@ bkg_match_places <- function(
     reclin2::compare_pairs(
       data_mun_pairs,
       on = c(place, zip_code),
-      default_comparator = dyn_comparator(place_match_quality, opts),
+      default_comparator = bkggeocoder:::dyn_comparator(place_match_quality, opts),
       inplace = TRUE
     )
 
@@ -94,6 +202,13 @@ bkg_match_places <- function(
         msg_failed = "Could not calculate place matching scores."
       )
     }
+    
+    # data_mun_pairs <-
+    #   reclin2::score_simple(
+    #     data_mun_pairs,
+    #     "score",
+    #     on = c(place, zip_code)
+    #   )
 
     formula_chr <- paste0("~", place, " + ", zip_code)
     fun_env <- environment()
@@ -122,6 +237,7 @@ bkg_match_places <- function(
       pairs = data_mun_pairs,
       variable = "threshold",
       score = "mpost",
+      # score = c(zip_code),
       threshold = 0,
       inplace = TRUE
     )
@@ -139,6 +255,15 @@ bkg_match_places <- function(
     ][["threshold"]]
 
     scores <- data_mun_pairs[data_mun_pairs$threshold, c(".x", "mprob")]
+    
+    # scores <- 
+    #   dplyr::tibble(
+    #     .x = data_mun_pairs$.x,
+    #     score = data_mun_pairs$score / 2
+    #   ) |> 
+    #   dplyr::group_by(.x) |> 
+    #   dplyr::arrange(score) |> 
+    #   dplyr::slice_tail(n = 1)
 
     data_mun_real <- reclin2::link(
       pairs = data_mun_pairs[data_mun_pairs$threshold],
@@ -147,20 +272,38 @@ bkg_match_places <- function(
     )
 
     data_mun_real <- merge(data_mun_real, scores, by = ".x")
-
+      
     data_mun_real <- structure(
       tibble::tibble(
         data_mun_real[[paste0(zip_code, ".x")]],
         data_mun_real[[paste0(place, ".x")]],
         data_mun_real[[paste0(zip_code, ".y")]],
-        data_mun_real[[paste0(place, ".y")]],
+        trimws(data_mun_real[[paste0(place, ".y")]], which = "right"),
         data_mun_real[["mprob"]]
+        # data_mun_real[["score"]]
       ),
       names = c(zip_code, place, "zip_code_matched", "place_matched", "score")
     )
   })
 
   # Combine with input ----
+  # data_mun_real <- merge(
+  #   .data,
+  #   data_mun_real,
+  #   by = c(place, zip_code),
+  #   all.x = TRUE,
+  #   sort = FALSE
+  # )
+  
+  data_mun_real <- merge(
+    data_mun_real, bkg_zip_places_simple, by = c("place_matched")
+  )
+  
+  data_mun_real$place_matched <- data_mun_real$place_simple
+  data_mun_real$place_simple <- NULL
+  
+  data_mun_real <- data_mun_real[!duplicated(data_mun_real),]
+  
   data_mun_real <- merge(
     .data,
     data_mun_real,
@@ -190,7 +333,7 @@ bkg_match_places <- function(
       cli::cli_alert_success("All addresses could be place-matched.")
     } else if (nrow(data_unmatched) && nrow(data_matched)) {
       cli::cli_inform(c("i" = paste(
-        "{.val {nrow(data_matched)}} out of {.val {nrow(data)}}",
+        "{.val {nrow(data_matched)}} out of {.val {nrow(.data)}}",
         "address{?es} could be place-matched."
       )))
     }

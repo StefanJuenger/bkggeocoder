@@ -43,11 +43,10 @@ bkg_match_addresses <- function(
     }
   ))
   
-  # Prepare BKG data ----
-  house_coordinates$whole_address <- trimws(paste0(
-    house_coordinates$street, " ", house_coordinates$house_number,
-    house_coordinates$house_number_add
-  ))
+  data_edited$matched$street <- data_edited_fixed_street
+  data_edited$matched$house_number <- data_edited$matched[[house_number]]
+  
+  house_coordinates[, house_number := paste0(house_number, house_number_add)]
 
   if (isTRUE(verbose)) {
     env <- environment()
@@ -66,43 +65,100 @@ bkg_match_addresses <- function(
   joined_data <- lapply(seq_len(nrow(data_edited$matched)), function(i) {
     if (isTRUE(verbose)) cli::cli_progress_update(.envir = env)
     # Create a pairs object with matching places and zip codes
-    within_place <- house_coordinates[
-      place == data_edited$matched[i,]$place_matched &
-        zip_code == data_edited$matched[i,]$zip_code_matched
-    ]
-    data_edited_pairs <- reclin2::pair(
+    within_place_string <- data_edited$matched[i,]$place_matched
+    within_zip_string <- data_edited$matched[i,]$zip_code_matched
+    
+    within_place <-
+      house_coordinates |> 
+      dplyr::filter(place == within_place_string, zip_code == within_zip_string)
+    
+    within_place$street_red <-
+      gsub("straße\\b", "X", within_place$street, ignore.case = TRUE)
+
+    within_place$street_red <-
+      gsub("weg\\b", "Y", within_place$street_red, ignore.case = TRUE)
+    
+    data_edited$matched$street_red <- NA
+    data_edited$matched[i, ]$street_red <- 
+      gsub("straße\\b", "X", data_edited$matched[i, ]$street, ignore.case = TRUE)
+    data_edited$matched[i, ]$street_red <- 
+      gsub("weg\\b", "Y", data_edited$matched[i, ]$street_red, ignore.case = TRUE)
+    
+    data_edited_pairs_street <- reclin2::pair(
       x = data_edited$matched[i, ],
       y = within_place
     )
     
     # Compute string distance scores of the pairs
     reclin2::compare_pairs(
-      data_edited_pairs,
-      on = "whole_address",
-      default_comparator = dyn_comparator(target_quality, opts),
+      data_edited_pairs_street,
+      on = c("street_red"),
+      default_comparator = bkggeocoder:::dyn_comparator(target_quality, opts),
       inplace = TRUE
     )
     
-    weight_i <- max(data_edited_pairs$whole_address)
+    weight_street <- max(data_edited_pairs_street$street)
     
     # Select data below threshold using a greedy selection algorithm
     reclin2::select_greedy(
-      data_edited_pairs,
+      data_edited_pairs_street,
       variable = "threshold",
-      score = "whole_address",
+      score = c("street_red"),
       threshold = 0,
       inplace = TRUE
     )
-    selection <- data_edited_pairs[data_edited_pairs$threshold]
+    
+    selection_street <- 
+      data_edited_pairs_street[data_edited_pairs_street$threshold]
+    
+    # within street
+    matched_street <- 
+      reclin2::link(
+        selection_street,
+        all_x = TRUE,
+        all_y = FALSE
+      ) |> 
+      cbind(score = weight_street) |> 
+      dplyr::pull(street.y)
+      
+    within_street <- within_place[within_place$street == matched_street,]
+    
+    data_edited_pairs_house_number <- reclin2::pair(
+      x = data_edited$matched[i, ],
+      y = within_street
+    )
+    
+    # Compute string distance scores of the pairs
+    reclin2::compare_pairs(
+      data_edited_pairs_house_number,
+      on = c("house_number"),
+      # on = "whole_address",
+      default_comparator = bkggeocoder:::dyn_comparator(target_quality, opts),
+      inplace = TRUE
+    )
+    
+    weight_house_number <- max(data_edited_pairs_house_number$house_number)
+    
+    # Select data below threshold using a greedy selection algorithm
+    reclin2::select_greedy(
+      data_edited_pairs_house_number,
+      variable = "threshold",
+      score = c("house_number"),
+      threshold = 0,
+      inplace = TRUE
+    )
+    
+    selection_house_number <- 
+      data_edited_pairs_house_number[data_edited_pairs_house_number$threshold]
     
     # Link results with original data
     data_linked <- reclin2::link(
-      selection,
+      selection_house_number,
       all_x = TRUE,
       all_y = FALSE
     )
     
-    cbind(data_linked, score = weight_i)
+    cbind(data_linked, score = (weight_street + weight_house_number) / 2)
   })
 
   if (isTRUE(verbose)) {
@@ -121,8 +177,8 @@ bkg_match_addresses <- function(
   # Fix scores ----
   # subtract 0.05 if housenumbers do not match
   regex_chr <- "[0-9]+[a-z]*"
-  hn.x <- unlist(match_regex(joined_data$whole_address.x, regex_chr))
-  hn.y <- match_regex(joined_data$whole_address.y, regex_chr)
+  hn.x <- unlist(bkggeocoder:::match_regex(joined_data$whole_address.x, regex_chr))
+  hn.y <- bkggeocoder:::match_regex(joined_data$whole_address.y, regex_chr)
   hn.y <- vapply(hn.y, function(x) if (!length(x)) NA_character_ else x, character(1))
   hn_mismatch <- !hn.x == hn.y & !is.na(hn.x) & !is.na(hn.y)
   incorrect_scores <- joined_data$score[hn_mismatch]
