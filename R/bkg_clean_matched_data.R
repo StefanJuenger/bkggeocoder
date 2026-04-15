@@ -47,7 +47,8 @@ bkg_clean_matched_addresses <- function(messy_data, cols, identifiers, verbose) 
     STA = substr(messy_data$RS, 1, 2),
     x = messy_data$x,
     y = messy_data$y,
-    source = "\u00a9 GeoBasis-DE / BKG, Deutsche Post Direkt GmbH, Statistisches Bundesamt, Wiesbaden (2021)"
+    date = "01.01.2025",
+    source = "\u00a9 GeoBasis-DE / BKG, Deutsche Post Direkt GmbH, Statistisches Bundesamt, Wiesbaden (2025)"
   )
 
   clean_data <- sf::st_as_sf(
