@@ -39,17 +39,25 @@ When using and publishing the results of the geocoding functions in this
 package, always refer to the data source as follows:
 
 © GeoBasis-DE / BKG, Deutsche Post Direkt GmbH, Statistisches Bundesamt,
-Wiesbaden (2021)
+Wiesbaden (2025)
 
 ## Installation
 
-The package is available on GitHub. You can install the latest version
-using the following code:
+The package is available on GitHub. You can install the latest (stable)
+version using the following code:
 
 ``` r
-if (!require(remotes)) install.packages("remotes")
+if (!require(pak)) install.packages("pak")
 
-remotes::install_github("StefanJuenger/bkggeocoder")
+pak::pkg_install("StefanJuenger/bkggeocoder")
+```
+
+The development version can be installed using:
+
+``` r
+if (!require(pak)) install.packages("pak")
+
+pak::pkg_install("StefanJuenger/bkggeocoder@dev")
 ```
 
 ## Resources

@@ -34,15 +34,15 @@ The package is available on GitHub. You can install the latest (stable) version 
 ```{r install-package, eval=FALSE, message=FALSE}
 if (!require(pak)) install.packages("pak")
 
-remotes::pkg_install("StefanJuenger/bkggeocoder")
+pak::pkg_install("StefanJuenger/bkggeocoder")
 ```
 
 The development version can be installed using:
 
-```{r install-package, eval=FALSE, message=FALSE}
+```{r install-package-dev, eval=FALSE, message=FALSE}
 if (!require(pak)) install.packages("pak")
 
-remotes::pkg_install("StefanJuenger/bkggeocoder@dev")
+pak::pkg_install("StefanJuenger/bkggeocoder@dev")
 ```
 
 ## Resources
