@@ -133,7 +133,7 @@ bkg_geocode <- function(.data = NULL,
                         identifiers = "rs",
                         target_quality = 0.9,
                         verbose = TRUE) {
-  args <- as.list(environment())
+  args <- as.list(environment(), all.names = TRUE)
   do.call(check_online_args, args)
   
   geocoded_data <- if (is.null(.data)) {
