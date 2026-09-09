@@ -263,7 +263,7 @@ osgts_request <- function(query,
   }
   
   url <- paste0(
-    "http://sg.geodatenzentrum.de/gdz_geokodierung/",
+    "https://sg.geodatenzentrum.de/gdz_geokodierung/",
     ifelse(is.null(query), "geocode", "geosearch")
   )
 
